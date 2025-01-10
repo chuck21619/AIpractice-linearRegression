@@ -1,0 +1,9 @@
+body {
+    color: rgb(243, 243, 243);
+}
+
+#drop_zone {
+    border: 5px solid rgb(67, 67, 67);
+    width: 200px;
+    height: 100px;
+}
