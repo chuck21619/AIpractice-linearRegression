@@ -1,29 +1,17 @@
 <!DOCTYPE html>
 <html>
-<body style="background-color:rgb(40, 114, 123);">
-<link rel="stylesheet" href="styles.css">
-
 <head>
-    <title>Linear Regression</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>   
-    <script src="main.js"></script>
+<title>Linear Regression</title>
+    <link rel="icon" href="bird-icon.jpg" type="image/jpg">
+    <link rel="stylesheet" href="styles.css">
 </head>
-
-<body onload="onLoad();">
+<body>
     <h1>Linear Regression</h1>
-    <div id="myBoard" style="width: 400px"></div>
-    <br>
-    <div
-        id="drop_zone"
-        ondrop="dropHandler(event);"
-        ondragover="dragOverHandler(event);">
-        <p>Drag one or more files to this <i>drop zone</i>.</p>
+    <div id="drop-area">
+        <p>Drag and drop your Excel file here</p>
     </div>
-    <br>
-    <button id="resetBoard">Reset</button>
-    <p id="output"></p>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="script.js"></script>
 </body>
-
 </html>
