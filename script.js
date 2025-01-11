@@ -34,6 +34,8 @@ function handleDrop(e) {
     handleFiles(files)
 }
 
+var inputs = [];
+var targets = [];
 function handleFiles(files) {
     ([...files]).forEach(file => {
         const reader = new FileReader();
@@ -49,6 +51,11 @@ function handleFiles(files) {
                 const worksheet = workbook.Sheets[sheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet);
                 console.log(json);
+                const keys = Object.keys(json[0]);
+                inputs = json.map(item => item[keys[0]]);
+                targets = json.map(item => item[keys[1]]);
+                console.log(inputs);
+                console.log(targets);
                 trainModel();
             };
         } else {
@@ -66,13 +73,13 @@ async function trainModel() {
     model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
 
     // Generate some training data
-    const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
-    const ys = tf.tensor2d([2, 4, 6, 8], [4, 1]);
+    const xs = tf.tensor2d(inputs, [inputs.length, 1]);
+    const ys = tf.tensor2d(targets, [targets.length, 1]);
 
     // Train the model
-    await model.fit(xs, ys, { epochs: 500 });
+    await model.fit(xs, ys, { epochs: 5 });
 
     // Make a prediction
-    const prediction = model.predict(tf.tensor2d([5], [1, 1]));
+    const prediction = model.predict(tf.tensor2d([1], [1, 1]));
     prediction.print();
 }
