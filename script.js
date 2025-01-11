@@ -1,5 +1,13 @@
 const dropArea = document.getElementById('drop-area');
 
+window.addEventListener('resize', function() {
+  const chartElement = document.getElementById('myChart');
+  const chartBottom = chartElement.getBoundingClientRect().top;
+  const windowHeight = window.innerHeight;
+  const maxChartHeight = windowHeight - chartBottom;
+  chartElement.style.maxHeight = maxChartHeight + 'px';
+});
+
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropArea.addEventListener(eventName, preventDefaults, false)
 });
@@ -56,6 +64,7 @@ function handleFiles(files) {
                 targets = json.map(item => item[keys[1]]);
                 console.log(inputs);
                 console.log(targets);
+                graph(inputs, targets);
                 trainModel();
             };
         } else {
@@ -86,7 +95,46 @@ async function trainModel() {
 }
 
 function submitNumber(inputValue) {
-  console.log("Input value:", inputValue);
-  const prediction = model.predict(tf.tensor2d([Number(inputValue)], [1, 1]));
-  prediction.print();
+    console.log("Input value:", inputValue);
+    const prediction = model.predict(tf.tensor2d([Number(inputValue)], [1, 1]));
+    prediction.print();
+}
+
+function graph(inputs, targets) {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Input vs Target',
+                data: inputs.map((input, index) => ({ x: input, y: targets[index] }))
+            }]
+        },
+        options: {
+            backgroundColor: 'rgb(255, 255, 255)',
+            color: 'rgb(255, 255, 255)',
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    grid: {
+                        color: 'rgb(0, 0, 0)'
+                    },
+                    ticks: {
+                        color: 'rgb(0, 0, 0)'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    grid: {
+                        color: 'rgb(0, 0, 0)'
+                    },
+                    ticks: {
+                        color: 'rgb(0, 0, 0)'
+                    }
+                }
+            }
+        }
+    });
 }
