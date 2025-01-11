@@ -1,6 +1,7 @@
 body {
     color: rgb(243, 243, 243);
     background-color:rgb(40, 114, 123);
+    font-family: Arial, sans-serif;
 }
 
 #drop-area {

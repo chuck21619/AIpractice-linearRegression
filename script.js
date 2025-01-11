@@ -1,45 +1,44 @@
 const dropArea = document.getElementById('drop-area');
 
-window.addEventListener('resize', function() {
-  const chartElement = document.getElementById('myChart');
-  const chartBottom = chartElement.getBoundingClientRect().top;
-  const windowHeight = window.innerHeight;
-  const maxChartHeight = windowHeight - chartBottom;
-  chartElement.style.maxHeight = maxChartHeight + 'px';
+window.addEventListener('resize', function () {
+    const chartElement = document.getElementById('myChart');
+    const chartBottom = chartElement.getBoundingClientRect().top;
+    const windowHeight = window.innerHeight;
+    const maxChartHeight = windowHeight - chartBottom;
+    chartElement.style.maxHeight = maxChartHeight + 'px';
 });
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropArea.addEventListener(eventName, preventDefaults, false)
+    dropArea.addEventListener(eventName, preventDefaults, false);
 });
 
 function preventDefaults(e) {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
 }
 
 ['dragenter', 'dragover'].forEach(eventName => {
-    dropArea.addEventListener(eventName, highlight, false)
+    dropArea.addEventListener(eventName, highlight, false);
 });
 
 ['dragleave', 'drop'].forEach(eventName => {
-    dropArea.addEventListener(eventName, unhighlight, false)
+    dropArea.addEventListener(eventName, unhighlight, false);
 });
 
 function highlight(e) {
-    dropArea.classList.add('highlight')
+    dropArea.classList.add('highlight');
 }
 
 function unhighlight(e) {
-    dropArea.classList.remove('highlight')
+    dropArea.classList.remove('highlight');
 }
 
 dropArea.addEventListener('drop', handleDrop, false);
 
 function handleDrop(e) {
-    let dt = e.dataTransfer
-    let files = dt.files
-
-    handleFiles(files)
+    let dt = e.dataTransfer;
+    let files = dt.files;
+    handleFiles(files);
 }
 
 var inputs = [];
@@ -58,13 +57,10 @@ function handleFiles(files) {
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet);
-                console.log(json);
                 const keys = Object.keys(json[0]);
                 inputs = json.map(item => item[keys[0]]);
                 targets = json.map(item => item[keys[1]]);
-                console.log(inputs);
-                console.log(targets);
-                graph(inputs, targets);
+                graphInitialData(inputs, targets);
                 trainModel();
             };
         } else {
@@ -75,41 +71,26 @@ function handleFiles(files) {
 
 var model;
 async function trainModel() {
-    // Create a simple model
     model = tf.sequential();
     model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-
-    // Compile the model
     model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
-
-    // Generate some training data
     const xs = tf.tensor2d(inputs, [inputs.length, 1]);
     const ys = tf.tensor2d(targets, [targets.length, 1]);
-
-    // Train the model
     await model.fit(xs, ys, { epochs: 5 });
 
-    // Make a prediction
-    //const prediction = model.predict(tf.tensor2d([1], [1, 1]));
-    //prediction.print();
+    graphModel();
 }
 
-function submitNumber(inputValue) {
-    console.log("Input value:", inputValue);
-    const prediction = model.predict(tf.tensor2d([Number(inputValue)], [1, 1]));
-    prediction.print();
-}
-
-function graph(inputs, targets) {
+var myChart;
+function graphInitialData(inputs, targets) {
+    const initialData = {
+        label: 'Data',
+        data: inputs.map((input, index) => ({ x: input, y: targets[index] }))
+    };
     const ctx = document.getElementById('myChart').getContext('2d');
-    const myChart = new Chart(ctx, {
+    myChart = new Chart(ctx, {
         type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Input vs Target',
-                data: inputs.map((input, index) => ({ x: input, y: targets[index] }))
-            }]
-        },
+        data: {datasets: [initialData] },
         options: {
             backgroundColor: 'rgb(255, 255, 255)',
             color: 'rgb(255, 255, 255)',
@@ -117,24 +98,43 @@ function graph(inputs, targets) {
                 x: {
                     type: 'linear',
                     position: 'bottom',
-                    grid: {
-                        color: 'rgb(0, 0, 0)'
-                    },
-                    ticks: {
-                        color: 'rgb(0, 0, 0)'
-                    }
+                    grid: { color: 'rgb(0, 0, 0)' },
+                    ticks: { color: 'rgb(0, 0, 0)' }
                 },
                 y: {
                     type: 'linear',
                     position: 'left',
-                    grid: {
-                        color: 'rgb(0, 0, 0)'
-                    },
-                    ticks: {
-                        color: 'rgb(0, 0, 0)'
-                    }
+                    grid: { color: 'rgb(0, 0, 0)' },
+                    ticks: { color: 'rgb(0, 0, 0)' }
                 }
             }
         }
     });
+}
+
+function graphModel() {
+    const xValues = [inputs[0], inputs.at(-1)]
+    const yValues = [(model.predict(tf.tensor2d([xValues[0]], [1, 1]))).dataSync()[0],
+                     (model.predict(tf.tensor2d([xValues[1]], [1, 1]))).dataSync()[0]]
+
+    const lineData = {
+        label: 'Model',
+        data: [
+            { x: xValues[0], y: yValues[0] },
+            { x: xValues[1], y: yValues[1] }
+        ],
+        backgroundColor: 'rgba(255, 99, 132, 1)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        showLine: true,
+        pointStyle: false
+    };
+
+    myChart.data.datasets.push(lineData);
+    myChart.update();
+}
+
+function submitNumber(inputValue) {
+    console.log("Input value:", inputValue);
+    const prediction = model.predict(tf.tensor2d([Number(inputValue)], [1, 1]));
+    prediction.print();
 }
