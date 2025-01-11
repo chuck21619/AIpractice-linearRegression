@@ -64,9 +64,10 @@ function handleFiles(files) {
     });
 }
 
+var model;
 async function trainModel() {
     // Create a simple model
-    const model = tf.sequential();
+    model = tf.sequential();
     model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
 
     // Compile the model
@@ -80,6 +81,12 @@ async function trainModel() {
     await model.fit(xs, ys, { epochs: 5 });
 
     // Make a prediction
-    const prediction = model.predict(tf.tensor2d([1], [1, 1]));
-    prediction.print();
+    //const prediction = model.predict(tf.tensor2d([1], [1, 1]));
+    //prediction.print();
+}
+
+function submitNumber(inputValue) {
+  console.log("Input value:", inputValue);
+  const prediction = model.predict(tf.tensor2d([Number(inputValue)], [1, 1]));
+  prediction.print();
 }
