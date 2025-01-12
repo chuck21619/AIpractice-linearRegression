@@ -33,6 +33,12 @@ function unhighlight(e) {
     dropArea.classList.remove('highlight');
 }
 
+const fileInput = document.getElementById('fileInput');
+
+dropArea.addEventListener('click', () => {
+    fileInput.click();
+});
+
 dropArea.addEventListener('drop', handleDrop, false);
 
 function handleDrop(e) {
@@ -41,9 +47,13 @@ function handleDrop(e) {
     handleFiles(files);
 }
 
-var inputs = [];
-var targets = [];
+fileInput.addEventListener('change', () => {
+    const files = fileInput.files;
+    handleFiles(files);
+});
+
 function handleFiles(files) {
+
     ([...files]).forEach(file => {
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -58,10 +68,13 @@ function handleFiles(files) {
                 const worksheet = workbook.Sheets[sheetName];
                 const json = XLSX.utils.sheet_to_json(worksheet);
                 const keys = Object.keys(json[0]);
-                inputs = json.map(item => item[keys[0]]);
-                targets = json.map(item => item[keys[1]]);
+                var inputs = json.map(item => item[keys[0]]);
+                var targets = json.map(item => item[keys[1]]);
+
                 graphInitialData(inputs, targets);
-                trainModel();
+                calculateScalers(inputs);
+                scaled_inputs = scaleFeatures(inputs);
+                trainModel(inputs, scaled_inputs, targets);
             };
         } else {
             reader.readAsText(file);
@@ -69,16 +82,28 @@ function handleFiles(files) {
     });
 }
 
+var scale_average;
+var scale_denominator;
+function calculateScalers(features) {
+     scale_average = features.reduce((a, b) => a + b, 0) / features.length;
+     scale_denominator = features.at(-1) - features[0];
+}
+
+function scaleFeatures(features) {
+    return features.map(a => (a - scale_average) / scale_denominator)
+}
+
 var model;
-async function trainModel() {
+async function trainModel(inputs, scaled_inputs, targets) {
     model = tf.sequential();
     model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-    model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
-    const xs = tf.tensor2d(inputs, [inputs.length, 1]);
+    const optimizer = tf.train.sgd(0.1);
+    model.compile({ optimizer: optimizer, loss: 'meanSquaredError' });
+    const xs = tf.tensor2d(scaled_inputs, [scaled_inputs.length, 1]);
     const ys = tf.tensor2d(targets, [targets.length, 1]);
-    await model.fit(xs, ys, { epochs: 5 });
+    await model.fit(xs, ys, { epochs: 100 });
 
-    graphModel();
+    graphModel(inputs, scaled_inputs);
 }
 
 var myChart;
@@ -88,6 +113,11 @@ function graphInitialData(inputs, targets) {
         data: inputs.map((input, index) => ({ x: input, y: targets[index] }))
     };
     const ctx = document.getElementById('myChart').getContext('2d');
+    if (myChart != null) {
+        myChart.data.datasets = [initialData];
+        myChart.update();
+        return;
+    }
     myChart = new Chart(ctx, {
         type: 'scatter',
         data: {datasets: [initialData] },
@@ -112,11 +142,12 @@ function graphInitialData(inputs, targets) {
     });
 }
 
-function graphModel() {
-    const xValues = [inputs[0], inputs.at(-1)]
-    const yValues = [(model.predict(tf.tensor2d([xValues[0]], [1, 1]))).dataSync()[0],
-                     (model.predict(tf.tensor2d([xValues[1]], [1, 1]))).dataSync()[0]]
+function graphModel(inputs, scaled_inputs) {
+    const xValues = [inputs[0], inputs.at(-1)];
+    const yValues = [(model.predict(tf.tensor2d([scaled_inputs[0]], [1, 1]))).dataSync()[0],
+                     (model.predict(tf.tensor2d([scaled_inputs.at(-1)], [1, 1]))).dataSync()[0]];
 
+    console.log("line graph- firstCoord:", xValues[0], ",", yValues[0], " lastCoord:", xValues[1], ",", yValues[1]);
     const lineData = {
         label: 'Model',
         data: [
@@ -131,10 +162,4 @@ function graphModel() {
 
     myChart.data.datasets.push(lineData);
     myChart.update();
-}
-
-function submitNumber(inputValue) {
-    console.log("Input value:", inputValue);
-    const prediction = model.predict(tf.tensor2d([Number(inputValue)], [1, 1]));
-    prediction.print();
 }

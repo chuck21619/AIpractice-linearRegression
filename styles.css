@@ -6,9 +6,10 @@ body {
 
 #drop-area {
     border: 2px dashed #ccc;
-    padding: 50px;
+    padding: 10px;
     text-align: center;
     cursor: pointer;
+    margin-left: 20px;
 }
 #drop-area.highlight {
     border-color: darkgreen;
