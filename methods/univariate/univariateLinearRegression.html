@@ -1,0 +1,20 @@
+
+<html>
+<head>
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h1>Univariate Linear Regression</h1>
+        <div id="drop-area" title="File format: first row is headers, then each other row is ">
+            <p>Drag and drop your Excel file here</p>
+            <input type="file" id="fileInput" style="display: none;">
+        </div>
+    </div>
+    <canvas id="myChart"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="univariate.js"></script>
+</body>
+</html>

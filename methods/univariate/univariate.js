@@ -1,62 +1,67 @@
-const dropArea = document.getElementById('drop-area');
 
-window.addEventListener('resize', function () {
-    updateChartMaxHeight();
-});
+window.setupDropArea = function() {
+    
+    function loadScript(url, callback) {
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = callback;
+        document.body.appendChild(script);
+    }
+    // Load the external script after innerHTML is set
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js", function() {
+        console.log('Script loaded after content update');
+    });
 
-function updateChartMaxHeight() {
-    const chartElement = document.getElementById('myChart');
-    const chartBottom = chartElement.getBoundingClientRect().top;
-    const windowHeight = window.innerHeight;
-    const maxChartHeight = windowHeight - chartBottom;
-    chartElement.style.maxHeight = maxChartHeight + 'px';
+    const dropArea = document.getElementById('drop-area');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropArea.classList.add('highlight');
+    }
+
+    function unhighlight(e) {
+        dropArea.classList.remove('highlight');
+    }
+
+    const fileInput = document.getElementById('fileInput');
+
+    dropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        let dt = e.dataTransfer;
+        let files = dt.files;
+        handleFiles(files);
+    }
+
+    fileInput.addEventListener('change', () => {
+        const files = fileInput.files;
+        handleFiles(files);
+    });
 }
-
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropArea.addEventListener(eventName, preventDefaults, false);
-});
-
-function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-}
-
-['dragenter', 'dragover'].forEach(eventName => {
-    dropArea.addEventListener(eventName, highlight, false);
-});
-
-['dragleave', 'drop'].forEach(eventName => {
-    dropArea.addEventListener(eventName, unhighlight, false);
-});
-
-function highlight(e) {
-    dropArea.classList.add('highlight');
-}
-
-function unhighlight(e) {
-    dropArea.classList.remove('highlight');
-}
-
-const fileInput = document.getElementById('fileInput');
-
-dropArea.addEventListener('click', () => {
-    fileInput.click();
-});
-
-dropArea.addEventListener('drop', handleDrop, false);
-
-function handleDrop(e) {
-    let dt = e.dataTransfer;
-    let files = dt.files;
-    handleFiles(files);
-}
-
-fileInput.addEventListener('change', () => {
-    const files = fileInput.files;
-    handleFiles(files);
-});
 
 function handleFiles(files) {
+
+    console.log("HANDLE FILES");
 
     ([...files]).forEach(file => {
         const reader = new FileReader();
@@ -66,7 +71,6 @@ function handleFiles(files) {
         if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
             reader.readAsArrayBuffer(file);
             reader.onload = function (e) {
-                updateChartMaxHeight();
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
