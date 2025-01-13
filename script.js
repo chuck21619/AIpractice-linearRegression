@@ -1,12 +1,16 @@
 const dropArea = document.getElementById('drop-area');
 
 window.addEventListener('resize', function () {
+    updateChartMaxHeight();
+});
+
+function updateChartMaxHeight() {
     const chartElement = document.getElementById('myChart');
     const chartBottom = chartElement.getBoundingClientRect().top;
     const windowHeight = window.innerHeight;
     const maxChartHeight = windowHeight - chartBottom;
     chartElement.style.maxHeight = maxChartHeight + 'px';
-});
+}
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropArea.addEventListener(eventName, preventDefaults, false);
@@ -62,6 +66,7 @@ function handleFiles(files) {
         if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
             reader.readAsArrayBuffer(file);
             reader.onload = function (e) {
+                updateChartMaxHeight();
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
