@@ -82,15 +82,15 @@ function handleFiles(files) {
     });
 }
 
-var scale_average;
-var scale_denominator;
+var feature_average;
+var feature_range;
 function calculateScalers(features) {
-     scale_average = features.reduce((a, b) => a + b, 0) / features.length;
-     scale_denominator = features.at(-1) - features[0];
+     feature_average = features.reduce((a, b) => a + b, 0) / features.length;
+     feature_range = Math.max(...features) - Math.min(...features)
 }
 
 function scaleFeatures(features) {
-    return features.map(a => (a - scale_average) / scale_denominator)
+    return features.map(a => (a - feature_average) / feature_range)
 }
 
 var model;
@@ -143,9 +143,9 @@ function graphInitialData(inputs, targets) {
 }
 
 function graphModel(inputs, scaled_inputs) {
-    const xValues = [inputs[0], inputs.at(-1)];
-    const yValues = [(model.predict(tf.tensor2d([scaled_inputs[0]], [1, 1]))).dataSync()[0],
-                     (model.predict(tf.tensor2d([scaled_inputs.at(-1)], [1, 1]))).dataSync()[0]];
+    const xValues = [Math.min(...inputs), Math.max(...inputs)];
+    const yValues = [(model.predict(tf.tensor2d([Math.min(...scaled_inputs)], [1, 1]))).dataSync()[0],
+                     (model.predict(tf.tensor2d([Math.max(...scaled_inputs)], [1, 1]))).dataSync()[0]];
 
     console.log("line graph- firstCoord:", xValues[0], ",", yValues[0], " lastCoord:", xValues[1], ",", yValues[1]);
     const lineData = {
