@@ -6,19 +6,27 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (event) => {
             event.preventDefault();
             const pageUrl = link.getAttribute('data-page');
-        fetch(pageUrl)
-            .then(response => response.text())
-            .then(html => {
-                contentDiv.innerHTML = html;
-                if (pageUrl === 'methods/univariate/univariateLinearRegression.html') {
-                    const script = document.createElement('script');
-                    script.src = 'methods/univariate/univariate.js';
-                    script.onload = () => {
-                        window.setupDropArea();
-                    };
-                    document.body.appendChild(script);
-                }
-            });
+            fetch(pageUrl)
+                .then(response => response.text())
+                .then(html => {
+                    console.log("doing things");
+
+                    function loadScript(url, callback) {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = callback;
+                        document.body.appendChild(script);
+                    }
+                    contentDiv.innerHTML = html;
+                    if (pageUrl === 'methods/univariate/univariateLinearRegression.html') {
+                        const script = document.createElement('script');
+                        script.src = 'methods/univariate/univariate.js';
+                        script.onload = () => {
+                            window.setupDropArea();
+                        };
+                        document.body.appendChild(script);
+                    }
+                });
         });
     });
 });

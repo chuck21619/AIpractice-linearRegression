@@ -1,16 +1,6 @@
 
 window.setupDropArea = function() {
-    
-    function loadScript(url, callback) {
-        const script = document.createElement('script');
-        script.src = url;
-        script.onload = callback;
-        document.body.appendChild(script);
-    }
-    // Load the external script after innerHTML is set
-    loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js", function() {
-        console.log('Script loaded after content update');
-    });
+    console.log("setup drop area");
 
     const dropArea = document.getElementById('drop-area');
 
