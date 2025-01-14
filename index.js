@@ -167,6 +167,12 @@ function handleFiles(files) {
                 setChartVisible(true);
                 method.trainModelAndGraphData(json, () => {
                     updateChartMaxHeight();
+                    if (method instanceof MultipleVariable) {
+                        for (let i = 1; i < myChart.data.datasets.length; i++) {
+                            myChart.data.datasets[i].hidden = true;
+                        }
+                        myChart.update();
+                    }
                 });
             };
         } else {
