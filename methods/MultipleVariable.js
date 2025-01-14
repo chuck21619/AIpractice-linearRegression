@@ -2,14 +2,14 @@ class MultipleVariable {
 
     constructor(chart) {
 
-        this.feature_average;
-        this.feature_range;
+        this.feature_averages = [];
+        this.feature_ranges = [];
         this.model;
         this.chart = chart;
 
         this.calculateScalers = function (features) {
-            this.feature_average = features.reduce((a, b) => a + b, 0) / features.length;
-            this.feature_range = Math.max(...features) - Math.min(...features)
+            this.feature_averages = features.map(feature => feature.reduce((a, b) => a + b, 0) / feature.length );
+            this.feature_ranges = features.map(feature => Math.max(...feature) - Math.min(...feature));
         }
 
         this.trainModelAndGraphData = function (json, callback) {
@@ -22,37 +22,44 @@ class MultipleVariable {
             const targets = json.map(obj => Object.entries(obj)   // Get key-value pairs
                 .filter(([key]) => key == keys.at(-1)) // Remove all but the last key which should be the ground truth Y
                 .map(([_, value]) => value)            // Get only the values
-            )
-                .flat();
+            ).flat();
             console.log("targets:", targets);
 
-            this.graphInitialData(inputs, targets, callback);
-            // this.calculateScalers(inputs);
-            // const scaled_inputs = this.scaleFeatures(inputs);
-            // this.trainModel(inputs, scaled_inputs, targets);
+            this.graphInitialData(inputs, targets, keys, callback);
+            const transposedFeatures = this.transposeArray(inputs);
+            this.calculateScalers(transposedFeatures);
+            const scaled_inputs = this.scaleFeatures(transposedFeatures);
+            console.log("scaled inputs:", scaled_inputs);
+            this.trainModel(inputs, scaled_inputs, targets);
         }
 
         this.scaleFeatures = function scaleFeatures(features) {
-            return features.map(a => (a - this.feature_average) / this.feature_range)
+            return this.transposeArray(
+                       features.map( (feature, index) =>
+                           feature.map(instance => 
+                               (instance - this.feature_averages[index]) / this.feature_ranges[index]
+                           )
+                       )
+                    )
         }
 
         this.trainModel = async function trainModel(inputs, scaled_inputs, targets) {
             this.model = tf.sequential();
-            this.model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+            this.model.add(tf.layers.dense({ units: 1, inputShape: [scaled_inputs[0].length] }));
             const optimizer = tf.train.sgd(0.1);
             this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError' });
-            const xs = tf.tensor2d(scaled_inputs, [scaled_inputs.length, 1]);
+            const xs = tf.tensor2d(scaled_inputs);
             const ys = tf.tensor2d(targets, [targets.length, 1]);
             await this.model.fit(xs, ys, { epochs: 100 });
-
-            this.graphModel(inputs, scaled_inputs);
+            console.log("training finished");
+            // this.graphModel(inputs, scaled_inputs);
         }
 
         this.transposeArray = function transposeArray(arr) {
             return arr[0].map((_, colIndex) => arr.map(row => row[colIndex]));
         }
 
-        this.graphInitialData = function graphInitialData(inputs, targets, callback) {
+        this.graphInitialData = function graphInitialData(inputs, targets, keys, callback) {
 
             const transposedInputs = this.transposeArray(inputs);
             var datasets = [];
@@ -60,35 +67,24 @@ class MultipleVariable {
                 datasets.push(value.map((input, index) => ({ x: input, y: targets[index] })));
             });
 
+            function getRandomRGB() {
+                const r = Math.floor(Math.random() * 200) + 56;
+                const g = Math.floor(Math.random() * 200) + 56;
+                const b = Math.floor(Math.random() * 200) + 56;
+                return `rgb(${r}, ${g}, ${b})`;
+            }
             console.log("datasets:", datasets);
-
-            const initialData = [
-                {
-                    label: 'Dataset 1',  // Label for the first dataset
-                    data: datasets[0],
-                    backgroundColor: 'rgba(75, 192, 192, 1)',  // Color of points in dataset 1
-                    borderColor: 'rgb(75, 192, 192)',  // Border color of points in dataset 1
-                    pointRadius: 5  // Radius of points
-                },
-                {
-                    label: 'Dataset 2',  // Label for the second dataset
-                    data: datasets[1],
-                    backgroundColor: 'rgba(255, 99, 132, 1)',  // Color of points in dataset 2
-                    borderColor: 'rgb(255, 99, 132)',  // Border color of points in dataset 2
-                    pointRadius: 5  // Radius of points
-                },
-                {
-                    label: 'Dataset 3',  // Label for the second dataset
-                    data: datasets[2],
-                    backgroundColor: 'rgb(51, 0, 255)',  // Color of points in dataset 2
-                    borderColor: 'rgb(51, 0, 255)',  // Border color of points in dataset 2
-                    pointRadius: 5  // Radius of points
-                }
-            ]
-            // const initialData = {
-            //     label: 'Data',
-            //     data: inputs.map((input, index) => ({ x: input, y: targets[index] }))
-            // };
+            const initialData = datasets.map( (dataset, index) => {
+                const randomColor = getRandomRGB();
+                return {
+                    label: keys[index],
+                    data: dataset,
+                    backgroundColor: randomColor,
+                    borderColor: randomColor,
+                    pointRadius: 5
+                };
+            });
+            console.log("initialData:", initialData);
             this.chart.data.datasets = initialData;
             this.chart.update();
             if (callback && typeof callback === 'function') {
