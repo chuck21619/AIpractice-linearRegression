@@ -10,18 +10,18 @@
     <nav>
         <ul>
             <li><a href="#" data-jsFile="univariate.js">Univariate<br>Linear Regression</a></li>
-            <li><a href="#" data-jsFile="multipleVariable.js">Multivariate<br>Linear Regression</a></li>
+            <li><a href="#" data-jsFile="multipleVariable.js">Multiple Variable<br>Linear Regression</a></li>
         </ul>
     </nav>
     <div id="content">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h1>Machine Learning</h1>
-            <div id="drop-area" title="File format: first row is headers, then each other row is ">
+            <h1 id="title">Machine Learning</h1>
+            <div hidden id="drop-area" title="File format: first row is headers, then each other row is ">
                 <p>Drag and drop your Excel file here</p>
                 <input type="file" id="fileInput" style="display: none;">
             </div>
         </div>
-        <p>Select a method on the left to get started</p>
+        <p id="subtitle">Select a method on the left to get started</p>
         <canvas id="myChart"></canvas>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>

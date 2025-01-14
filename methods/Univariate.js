@@ -2,7 +2,6 @@ class Univarite {
 
     constructor(chart) {
 
-        console.log("UNIVARIATE CONSTRUCTOR");
         this.feature_average;
         this.feature_range;
         this.model;
@@ -14,12 +13,9 @@ class Univarite {
         }
 
         this.trainModelAndGraphData = function(json) {
-            console.log("UNIVARIATE - training and graphing");
             const keys = Object.keys(json[0]);
             var inputs = json.map(item => item[keys[0]]);
             var targets = json.map(item => item[keys[1]]);
-            // console.log("inputs:", inputs);
-            // console.log("targets:", targets);
             this.graphInitialData(inputs, targets);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);
