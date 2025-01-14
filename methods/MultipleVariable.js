@@ -12,7 +12,7 @@ class MultipleVariable {
             this.feature_ranges = features.map(feature => Math.max(...feature) - Math.min(...feature));
         }
 
-        this.trainModelAndGraphData = function (json, callback) {
+        this.trainModelAndGraphData = function (json, initialCallback, finishedCallback) {
             const keys = Object.keys(json[0]);
             const inputs = json.map(obj => Object.entries(obj)    // Get key-value pairs
                 .filter(([key]) => key !== keys.at(-1)) // Remove the last key which should be the ground truth Y
@@ -25,12 +25,20 @@ class MultipleVariable {
             ).flat();
             console.log("targets:", targets);
 
-            this.graphInitialData(inputs, targets, keys, callback);
+            this.graphInitialData(inputs, targets, keys, initialCallback);
             const transposedFeatures = this.transposeArray(inputs);
             this.calculateScalers(transposedFeatures);
             const scaled_inputs = this.scaleFeatures(transposedFeatures);
-            console.log("scaled inputs:", scaled_inputs);
-            this.trainModel(inputs, scaled_inputs, targets);
+            this.trainModel(inputs, scaled_inputs, targets, function(weights) {
+                var equationString = keys.map((item, index) => {
+                                            if ( index == keys.length -1 ) {
+                                                return;
+                                            }
+                                            return item + '*' + weights[index].toFixed(2)
+                                            }).join(' + ');
+                equationString += weights.at(-1);
+                finishedCallback(equationString);
+            });
         }
 
         this.scaleFeatures = function scaleFeatures(features) {
@@ -43,7 +51,7 @@ class MultipleVariable {
                     )
         }
 
-        this.trainModel = async function trainModel(inputs, scaled_inputs, targets) {
+        this.trainModel = async function trainModel(inputs, scaled_inputs, targets, callback) {
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({ units: 1, inputShape: [scaled_inputs[0].length] }));
             const optimizer = tf.train.sgd(0.1);
@@ -51,7 +59,12 @@ class MultipleVariable {
             const xs = tf.tensor2d(scaled_inputs);
             const ys = tf.tensor2d(targets, [targets.length, 1]);
             await this.model.fit(xs, ys, { epochs: 100 });
-            console.log("training finished");
+            
+            const weights = this.model.getWeights()[0].dataSync();
+            const weights1 = this.model.getWeights()[1].dataSync();
+            if (callback && typeof callback === 'function') {
+                callback([...weights, ...weights1]);
+            }
             // this.graphModel(inputs, scaled_inputs);
         }
 

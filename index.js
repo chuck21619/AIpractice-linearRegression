@@ -10,14 +10,15 @@ function onNavButtonClick(file) {
 
     document.getElementById('drop-area').hidden = false;
     setChartVisible(false);
+    document.getElementById('equation').innerText = '';
     if (file == 'univariate.js') {
         method = new Univarite(myChart);
         document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "something about univariate linear regression";
+        document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial";
     }
     else if (file == 'multipleVariable.js') {
         document.getElementById('title').innerHTML = "Multiple Variable<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "something about multiple variable linear regression";
+        document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
         method = new MultipleVariable(myChart);
     }
 }
@@ -173,6 +174,8 @@ function handleFiles(files) {
                         }
                         myChart.update();
                     }
+                }, function (equationString) {
+                    document.getElementById('equation').innerText = "prediction = " + equationString;
                 });
             };
         } else {

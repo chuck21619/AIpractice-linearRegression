@@ -12,21 +12,30 @@ class Univarite {
             this.feature_range = Math.max(...features) - Math.min(...features)
         }
 
-        this.trainModelAndGraphData = function(json, callback) {
+        this.trainModelAndGraphData = function(json, initialCallback, finishedCallback) {
             const keys = Object.keys(json[0]);
             const inputs = json.map(item => item[keys[0]]);
             const targets = json.map(item => item[keys[1]]);
-            this.graphInitialData(inputs, targets, callback);
+            this.graphInitialData(inputs, targets, initialCallback);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);
-            this.trainModel(inputs, scaled_inputs, targets);
+            this.trainModel(inputs, scaled_inputs, targets, function(weights) {
+                var equationString = keys.map((item, index) => {
+                                            if ( index == keys.length -1 ) {
+                                                return;
+                                            }
+                                            return item + '*' + weights[index].toFixed(2)
+                                            }).join(' + ');
+                equationString += weights.at(-1);
+                finishedCallback(equationString);
+            });
         }
 
         this.scaleFeatures = function scaleFeatures(features) {
             return features.map(a => (a - this.feature_average) / this.feature_range)
         }
 
-        this.trainModel = async function trainModel(inputs, scaled_inputs, targets) {
+        this.trainModel = async function trainModel(inputs, scaled_inputs, targets, callback) {
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
             const optimizer = tf.train.sgd(0.1);
@@ -34,7 +43,12 @@ class Univarite {
             const xs = tf.tensor2d(scaled_inputs, [scaled_inputs.length, 1]);
             const ys = tf.tensor2d(targets, [targets.length, 1]);
             await this.model.fit(xs, ys, { epochs: 100 });
-    
+            
+            const weights = this.model.getWeights()[0].dataSync();
+            const weights1 = this.model.getWeights()[1].dataSync();
+            if (callback && typeof callback === 'function') {
+                callback([...weights, ...weights1]);
+            }
             this.graphModel(inputs, scaled_inputs);
         }
 
