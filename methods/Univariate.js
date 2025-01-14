@@ -14,8 +14,8 @@ class Univarite {
 
         this.trainModelAndGraphData = function(json, callback) {
             const keys = Object.keys(json[0]);
-            var inputs = json.map(item => item[keys[0]]);
-            var targets = json.map(item => item[keys[1]]);
+            const inputs = json.map(item => item[keys[0]]);
+            const targets = json.map(item => item[keys[1]]);
             this.graphInitialData(inputs, targets, callback);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);
@@ -55,8 +55,6 @@ class Univarite {
             const xValues = [Math.min(...inputs), Math.max(...inputs)];
             const yValues = [(this.model.predict(tf.tensor2d([Math.min(...scaled_inputs)], [1, 1]))).dataSync()[0],
             (this.model.predict(tf.tensor2d([Math.max(...scaled_inputs)], [1, 1]))).dataSync()[0]];
-    
-            console.log("line graph- firstCoord:", xValues[0], ",", yValues[0], " lastCoord:", xValues[1], ",", yValues[1]);
             const lineData = {
                 label: 'Model',
                 data: [

@@ -3,15 +3,8 @@ import MultipleVariable from './methods/MultipleVariable.js';
 
 var method;
 function onNavButtonClick(file) {
-    console.log("nav button clicked", file);
-
-    // Get all navigation links
     const navLinks = document.querySelectorAll('nav ul li a');
-
-    // Remove active class from all links
     navLinks.forEach(link => link.classList.remove('active'));
-
-    // Add active class to the clicked link
     const clickedLink = document.querySelector(`nav ul li a[data-jsFile="${file}"]`);
     clickedLink.classList.add('active');
 
@@ -39,17 +32,15 @@ function updateChartMaxHeight() {
     const windowHeight = window.innerHeight;
     const maxChartHeight = windowHeight - chartBottom;
     chartElement.style.maxHeight = maxChartHeight + 'px';
-    console.log("MAX HEIGHT:", maxChartHeight);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log("dom content loaded");
-
     hookUpNavButtons();
     setupDropArea();
     createChart();
     setChartVisible(false);
 });
+
 
 var myChart;
 function createChart() {
@@ -60,6 +51,29 @@ function createChart() {
         options: {
             backgroundColor: 'rgb(255, 255, 255)',
             color: 'rgb(255, 255, 255)',
+            responsive: true,
+            plugins: {
+                legend: {
+                    onClick: function (event, legendItem) {
+                        if (method instanceof MultipleVariable) {
+                            const index = legendItem.datasetIndex;
+                            myChart.data.datasets.forEach((dataset, i) => {
+                                if (i !== index) {
+                                    dataset.hidden = true;
+                                }
+                            });
+                            myChart.data.datasets[index].hidden = false;
+                            myChart.update();
+                        }
+                        else {
+                            const datasetIndex = legendItem.datasetIndex;
+                            const dataset = myChart.data.datasets[datasetIndex];
+                            dataset.hidden = !dataset.hidden;
+                            myChart.update();
+                        }
+                    }
+                }
+            },
             scales: {
                 x: {
                     type: 'linear',
@@ -79,8 +93,6 @@ function createChart() {
 }
 
 function hookUpNavButtons() {
-    console.log("hook up nav buttons");
-
     const navLinks = document.querySelectorAll('nav ul li a');
     navLinks.forEach(link => {
         const jsFile = link.getAttribute('data-jsFile');
@@ -89,7 +101,6 @@ function hookUpNavButtons() {
 }
 
 function setupDropArea() {
-    console.log("setup drop area");
     const dropArea = document.getElementById('drop-area');
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -120,21 +131,18 @@ function setupDropArea() {
     const fileInput = document.getElementById('fileInput');
 
     dropArea.addEventListener('click', () => {
-        console.log("file click");
         fileInput.click();
     });
 
     dropArea.addEventListener('drop', handleDrop, false);
 
     function handleDrop(e) {
-        console.log("handle drop");
         let dt = e.dataTransfer;
         let files = dt.files;
         handleFiles(files);
     }
 
     fileInput.addEventListener('change', () => {
-        console.log("file change");
         const files = fileInput.files;
         handleFiles(files);
         fileInput.value = '';
@@ -142,8 +150,6 @@ function setupDropArea() {
 }
 
 function handleFiles(files) {
-    console.log("handle files:", files);
-
     ([...files]).forEach(file => {
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -170,12 +176,10 @@ function handleFiles(files) {
 }
 
 function setChartVisible(showChart) {
-    if ( showChart ) {
-        console.log("show chart");
+    if (showChart) {
         document.getElementById('myChart').style.visibility = 'visible';
     }
     else {
-        console.log("hide chart");
         document.getElementById('myChart').style.visibility = 'hidden';
         myChart.clear();
     }
