@@ -5,57 +5,28 @@
     <link rel="icon" href="bird-icon.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <style>
-        body {
-            display: flex;
-            font-family: sans-serif;
-            margin: 0;
-        }
-        nav {
-            width: 200px;
-            background-color: #102b30;
-            padding: 20px;
-            height: 100vh;
-            box-sizing: border-box;
-        }
-        nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        nav ul li {
-            margin-bottom: 10px;
-        }
-        nav ul li a {
-            text-decoration: none;
-            color: #333;
-            display: block;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-        nav ul li a:hover {
-            background-color: #ddd;
-        }
-        #content {
-            flex-grow: 1;
-            padding: 20px;
-        }
-    </style>
 </head>
 <body>
     <nav>
         <ul>
-            <li><a href="#" data-page="methods/univariate/univariateLinearRegression.html">Univariate<br>Linear Regression</a></li>
-            <li><a href="#" data-page="methods/multivariate/multipleVariableLinearRegression.html">Multivariate<br>Linear Regression</a></li>
+            <li><a href="#" data-jsFile="univariate.js">Univariate<br>Linear Regression</a></li>
+            <li><a href="#" data-jsFile="multipleVariable.js">Multivariate<br>Linear Regression</a></li>
         </ul>
     </nav>
     <div id="content">
-        <h1>Machine Learning</h1>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h1>Machine Learning</h1>
+            <div id="drop-area" title="File format: first row is headers, then each other row is ">
+                <p>Drag and drop your Excel file here</p>
+                <input type="file" id="fileInput" style="display: none;">
+            </div>
+        </div>
         <p>Select a method on the left to get started</p>
+        <canvas id="myChart"></canvas>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="index.js"></script>
+    <script src="index.js" type="module"></script>
 </body>
 </html>

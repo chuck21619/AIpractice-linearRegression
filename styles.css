@@ -3,7 +3,40 @@ body {
     background-color:rgb(40, 114, 123);
     font-family: Arial, sans-serif;
 }
-
+body {
+    display: flex;
+    font-family: sans-serif;
+    margin: 0;
+}
+nav {
+    width: 200px;
+    background-color: #102b30;
+    padding: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+}
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+nav ul li {
+    margin-bottom: 10px;
+}
+nav ul li a {
+    text-decoration: none;
+    color: #333;
+    display: block;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+nav ul li a:hover {
+    background-color: #ddd;
+}
+#content {
+    flex-grow: 1;
+    padding: 20px;
+}
 #drop-area {
     border: 2px dashed #ccc;
     padding: 10px;
