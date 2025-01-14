@@ -12,11 +12,11 @@ class Univarite {
             this.feature_range = Math.max(...features) - Math.min(...features)
         }
 
-        this.trainModelAndGraphData = function(json) {
+        this.trainModelAndGraphData = function(json, callback) {
             const keys = Object.keys(json[0]);
             var inputs = json.map(item => item[keys[0]]);
             var targets = json.map(item => item[keys[1]]);
-            this.graphInitialData(inputs, targets);
+            this.graphInitialData(inputs, targets, callback);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);
             this.trainModel(inputs, scaled_inputs, targets);
@@ -38,13 +38,16 @@ class Univarite {
             this.graphModel(inputs, scaled_inputs);
         }
 
-        this.graphInitialData = function graphInitialData(inputs, targets) {
+        this.graphInitialData = function graphInitialData(inputs, targets, callback) {
             const initialData = {
                 label: 'Data',
                 data: inputs.map((input, index) => ({ x: input, y: targets[index] }))
             };
             this.chart.data.datasets = [initialData];
             this.chart.update();
+            if (callback && typeof callback === 'function') {
+                callback();
+            }
             return;
         }
 

@@ -39,6 +39,7 @@ function updateChartMaxHeight() {
     const windowHeight = window.innerHeight;
     const maxChartHeight = windowHeight - chartBottom;
     chartElement.style.maxHeight = maxChartHeight + 'px';
+    console.log("MAX HEIGHT:", maxChartHeight);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -75,7 +76,6 @@ function createChart() {
             }
         }
     });
-    updateChartMaxHeight();
 }
 
 function hookUpNavButtons() {
@@ -159,7 +159,9 @@ function handleFiles(files) {
                 const json = XLSX.utils.sheet_to_json(worksheet);
 
                 setChartVisible(true);
-                method.trainModelAndGraphData(json);
+                method.trainModelAndGraphData(json, () => {
+                    updateChartMaxHeight();
+                });
             };
         } else {
             reader.readAsText(file);
