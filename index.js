@@ -30,7 +30,7 @@ window.addEventListener('resize', function () {
 function updateChartMaxHeight() {
     const chartElement = document.getElementById('myChart');
     const chartBottom = chartElement.getBoundingClientRect().top;
-    const windowHeight = window.innerHeight;
+    const windowHeight = window.innerHeight - 20;
     const maxChartHeight = windowHeight - chartBottom;
     chartElement.style.maxHeight = maxChartHeight + 'px';
 }
@@ -195,8 +195,15 @@ function handleFiles(files) {
                         }
                         myChart.update();
                     }
-                }, function (equationString) {
-                    document.getElementById('equation').innerText = "prediction = " + equationString;
+                }, function (equationString, featureImpacts) {
+                    const keys = Object.keys(json[0]);
+                    var featureImpactsString = ""
+                    if (method instanceof MultipleVariable) {
+                        featureImpactsString = featureImpacts.reduce((string, impact, index) => {
+                            return string + keys[index] + "=" + (impact * 100).toFixed(0) + "% ";
+                        }, "importance: ");
+                    }
+                    document.getElementById('equation').innerHTML = "prediction = " + equationString + "<br><br>" + featureImpactsString;
                     updateChartMaxHeight();
                 });
             };

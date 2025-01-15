@@ -34,7 +34,8 @@ class MultipleVariable {
                 }).join(' + ');
                 equationString += weights.at(-1);
                 this.graphModel(keys, inputs, scaled_inputs, weights);
-                finishedCallback(equationString);
+                const featureImpacts = this.calculateFeatureImpact(weights.slice(0, -1));
+                finishedCallback(equationString, featureImpacts);
             });
         }
 
@@ -80,12 +81,13 @@ class MultipleVariable {
                 }
                 b -= alpha * dj_db;
             }
-            console.log("w gradientDescent:", w);
-            console.log("b gradientDescent:", b);
             return { w, b };
         }
 
         this.predict = function predict(m, x, b) {
+            console.log("m:", m);
+            console.log("x:", x);
+            console.log("b:", b);
             let dotProduct = m.reduce((sum, value, index) => sum + value * x[index], 0);
             return dotProduct + b;
         }
@@ -94,10 +96,8 @@ class MultipleVariable {
             return (m * x) + b
         }
 
-
-
         this.trainModel = function trainModel(scaled_inputs, targets, callback) {
-            let wInit = new Array(scaled_inputs[0].length).fill(0); // Equivalent to np.zeros(len(house_features[0]))
+            let wInit = new Array(scaled_inputs[0].length).fill(0);
             let bInit = 0;
             let iterations = 10000;
             let tmpAlpha = 0.01;
@@ -150,16 +150,15 @@ class MultipleVariable {
             const transposed_scaled_inputs = this.transposeArray(scaled_inputs);
             const min_max_tci = transposed_scaled_inputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
             const yValues = min_max_tci.map((feature, index) => feature.map(value => this.predict_single_feature(value, weights[index], weights.at(-1))));
-
-            xValues.forEach((value, index) => {
+            xValues.forEach((_, index) => {
                 const lineData = {
                     label: keys[index],
                     data: [
                         { x: xValues[index][0], y: yValues[index][0] },
                         { x: xValues[index][1], y: yValues[index][1] }
                     ],
-                    backgroundColor: 'rgba(255, 99, 132, 1)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: this.chart.data.datasets[index].backgroundColor,
+                    borderColor: this.chart.data.datasets[index].backgroundColor,
                     showLine: true,
                     pointStyle: false,
                     hidden: index != 0
@@ -168,6 +167,13 @@ class MultipleVariable {
                 this.chart.data.datasets.push(lineData);
             });
             this.chart.update();
+        }
+
+        this.calculateFeatureImpact = function calculateFeatureImpact(weights) {
+            const absoluteCoefficients = weights.map(coef => Math.abs(coef));
+            const totalImportance = absoluteCoefficients.reduce((sum, coef) => sum + coef, 0);
+            const normalizedImportance = absoluteCoefficients.map(coef => coef / totalImportance);
+            return normalizedImportance;
         }
     }
 }
