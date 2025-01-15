@@ -14,28 +14,22 @@ class MultipleVariable {
 
         this.trainModelAndGraphData = function (json, initialCallback, finishedCallback) {
             const keys = Object.keys(json[0]);
-            const inputs = json.map(obj => Object.entries(obj)    // Get key-value pairs
-                .filter(([key]) => key !== keys.at(-1)) // Remove the last key which should be the ground truth Y
-                .map(([_, value]) => value)             // Get only the values
+            const inputs = json.map(obj => Object.entries(obj)
+                .filter(([key]) => key !== keys.at(-1))
+                .map(([_, value]) => value)
             );
-            console.log("inputs:", inputs);
-            const targets = json.map(obj => Object.entries(obj)   // Get key-value pairs
-                .filter(([key]) => key == keys.at(-1)) // Remove all but the last key which should be the ground truth Y
-                .map(([_, value]) => value)            // Get only the values
+            const targets = json.map(obj => Object.entries(obj)
+                .filter(([key]) => key == keys.at(-1))
+                .map(([_, value]) => value)
             ).flat();
-            console.log("targets:", targets);
 
             this.graphInitialData(inputs, targets, keys, initialCallback);
             const transposedFeatures = this.transposeArray(inputs);
             this.calculateScalers(transposedFeatures);
             const scaled_inputs = this.scaleFeatures(transposedFeatures);
             this.trainModel(scaled_inputs, targets, (weights) => {
-
-                // ((x - average)/range)*
                 var equationString = keys.map((item, index) => {
-                    if (index == keys.length - 1) {
-                        return;
-                    }
+                    if (index == keys.length - 1) { return; }
                     return '((' + item + ' - ' + this.feature_averages[index].toFixed(2) + ')/' + this.feature_ranges[index].toFixed(2) + '*' + weights[index].toFixed(2)
                 }).join(' + ');
                 equationString += weights.at(-1);
@@ -54,19 +48,62 @@ class MultipleVariable {
             )
         }
 
-        this.trainModel = async function trainModel(scaled_inputs, targets, callback) {
-            this.model = tf.sequential();
-            this.model.add(tf.layers.dense({ units: 1, inputShape: [scaled_inputs[0].length] }));
-            const optimizer = tf.train.sgd(0.1);
-            this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError' });
-            const xs = tf.tensor2d(scaled_inputs);
-            const ys = tf.tensor2d(targets, [targets.length, 1]);
-            await this.model.fit(xs, ys, { epochs: 100 });
+        this.computeGradient = function computeGradient(features, targets, weights, bias) {
+            const numberOfExamples = features.length;
+            const numberOfFeatures = features[0].length;
+            let dj_dw = new Array(numberOfFeatures).fill(0);
+            let dj_db = 0.0;
 
-            const weights = this.model.getWeights()[0].dataSync();
-            const weights1 = this.model.getWeights()[1].dataSync();
+            for (let m = 0; m < numberOfExamples; m++) {
+                for (let n = 0; n < numberOfFeatures; n++) {
+                    let prediction = features[m].reduce((sum, feature, idx) => sum + feature * weights[idx], 0) + bias;
+                    dj_dw[n] += (prediction - targets[m]) * features[m][n];
+                }
+                let prediction = features[m].reduce((sum, feature, idx) => sum + feature * weights[idx], 0) + bias;
+                dj_db += (prediction - targets[m]);
+            }
+
+            dj_dw = dj_dw.map(grad => grad / numberOfExamples);
+            dj_db /= numberOfExamples;
+
+            return { dj_dw, dj_db };
+        }
+
+        this.gradientDescent = function gradientDescent(features, targets, wIn, bIn, alpha, numIters, gradientFunction) {
+            let w = wIn;
+            let b = bIn;
+
+            for (let i = 0; i < numIters; i++) {
+                let { dj_dw, dj_db } = gradientFunction(features, targets, w, b);
+                for (let j = 0; j < w.length; j++) {
+                    w[j] -= alpha * dj_dw[j];
+                }
+                b -= alpha * dj_db;
+            }
+            console.log("w gradientDescent:", w);
+            console.log("b gradientDescent:", b);
+            return { w, b };
+        }
+
+        this.predict = function predict(m, x, b) {
+            let dotProduct = m.reduce((sum, value, index) => sum + value * x[index], 0);
+            return dotProduct + b;
+        }
+
+        this.predict_single_feature = function predict_single_feature(m, x, b) {
+            return (m * x) + b
+        }
+
+
+
+        this.trainModel = function trainModel(scaled_inputs, targets, callback) {
+            let wInit = new Array(scaled_inputs[0].length).fill(0); // Equivalent to np.zeros(len(house_features[0]))
+            let bInit = 0;
+            let iterations = 10000;
+            let tmpAlpha = 0.01;
+            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
             if (callback && typeof callback === 'function') {
-                callback([...weights, ...weights1]);
+                callback([...w, b]);
             }
         }
 
@@ -88,9 +125,8 @@ class MultipleVariable {
                 const b = Math.floor(Math.random() * 200) + 56;
                 return `rgb(${r}, ${g}, ${b})`;
             }
-            console.log("datasets:", datasets);
             const initialData = datasets.map((dataset, index) => {
-                const randomColor = 'rgba(255, 99, 132, 1)';//getRandomRGB();
+                const randomColor = getRandomRGB();
                 return {
                     label: keys[index],
                     data: dataset,
@@ -99,7 +135,6 @@ class MultipleVariable {
                     pointRadius: 5
                 };
             });
-            console.log("initialData:", initialData);
             this.chart.data.datasets = initialData;
             this.chart.update();
             if (callback && typeof callback === 'function') {
@@ -114,7 +149,7 @@ class MultipleVariable {
             const xValues = transposedInputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
             const transposed_scaled_inputs = this.transposeArray(scaled_inputs);
             const min_max_tci = transposed_scaled_inputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
-            const yValues = min_max_tci.map( (feature, index) => feature.map(value => (value * weights[index]) + weights.at(-1)));
+            const yValues = min_max_tci.map((feature, index) => feature.map(value => this.predict_single_feature(value, weights[index], weights.at(-1))));
 
             xValues.forEach((value, index) => {
                 const lineData = {
@@ -129,7 +164,7 @@ class MultipleVariable {
                     pointStyle: false,
                     hidden: index != 0
                 };
-    
+
                 this.chart.data.datasets.push(lineData);
             });
             this.chart.update();

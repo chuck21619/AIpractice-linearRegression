@@ -19,12 +19,13 @@ class Univarite {
             this.graphInitialData(inputs, targets, initialCallback);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);
-            this.trainModel(inputs, scaled_inputs, targets, function(weights) {
+            this.trainModel(inputs, scaled_inputs, targets, (weights) => {
+                // ((x - average)/range)*
                 var equationString = keys.map((item, index) => {
                                             if ( index == keys.length -1 ) {
                                                 return;
                                             }
-                                            return item + '*' + weights[index].toFixed(2)
+                                            return '((' + item + '-' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + ')' + '*' + weights[index].toFixed(2)
                                             }).join(' + ');
                 equationString += weights.at(-1);
                 finishedCallback(equationString);
