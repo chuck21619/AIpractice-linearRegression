@@ -58,12 +58,11 @@ function createChart() {
                     onClick: function (event, legendItem) {
                         if (method instanceof MultipleVariable) {
                             const index = legendItem.datasetIndex;
-                            myChart.data.datasets.forEach((dataset, i) => {
-                                if (i !== index) {
-                                    dataset.hidden = true;
-                                }
+                            const dataset = myChart.data.datasets[index];
+                            const label = dataset.label;
+                            myChart.data.datasets.forEach((dataset) => {
+                                dataset.hidden = dataset.label != label;
                             });
-                            myChart.data.datasets[index].hidden = false;
                             myChart.update();
                         }
                         else {
@@ -71,6 +70,28 @@ function createChart() {
                             const dataset = myChart.data.datasets[datasetIndex];
                             dataset.hidden = !dataset.hidden;
                             myChart.update();
+                        }
+                    },
+                    labels: {
+                        // Use a custom legend label to combine the line and scatter appearance
+                        generateLabels: (chart) => {
+                            const uniqueLabels = chart.data.datasets.filter((dataset, index, self) => {
+                                return self.findIndex(d => d.label === dataset.label) === index;
+                            });
+                            return uniqueLabels.map(function (dataset, i) {
+                                // Retrieve the dataset label
+                                var meta = chart.getDatasetMeta(i);
+                                var style = meta.controller.getStyle(0);
+
+                                return {
+                                    text: dataset.label,  // The dataset's label (e.g., "Sales", "Revenue")
+                                    fillStyle: style.backgroundColor || style.borderColor,  // Dataset's fill color
+                                    strokeStyle: style.borderColor,  // Border color
+                                    lineWidth: style.borderWidth,  // Border width
+                                    hidden: !chart.isDatasetVisible(i),  // Whether the dataset is visible or hidden
+                                    datasetIndex: i,  // Index of the dataset
+                                };
+                            });
                         }
                     }
                 }
@@ -176,6 +197,7 @@ function handleFiles(files) {
                     }
                 }, function (equationString) {
                     document.getElementById('equation').innerText = "prediction = " + equationString;
+                    updateChartMaxHeight();
                 });
             };
         } else {

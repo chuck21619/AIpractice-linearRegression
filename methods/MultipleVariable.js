@@ -8,7 +8,7 @@ class MultipleVariable {
         this.chart = chart;
 
         this.calculateScalers = function (features) {
-            this.feature_averages = features.map(feature => feature.reduce((a, b) => a + b, 0) / feature.length );
+            this.feature_averages = features.map(feature => feature.reduce((a, b) => a + b, 0) / feature.length);
             this.feature_ranges = features.map(feature => Math.max(...feature) - Math.min(...feature));
         }
 
@@ -29,29 +29,32 @@ class MultipleVariable {
             const transposedFeatures = this.transposeArray(inputs);
             this.calculateScalers(transposedFeatures);
             const scaled_inputs = this.scaleFeatures(transposedFeatures);
-            this.trainModel(inputs, scaled_inputs, targets, function(weights) {
+            this.trainModel(scaled_inputs, targets, (weights) => {
+
+                // ((x - average)/range)*
                 var equationString = keys.map((item, index) => {
-                                            if ( index == keys.length -1 ) {
-                                                return;
-                                            }
-                                            return item + '*' + weights[index].toFixed(2)
-                                            }).join(' + ');
+                    if (index == keys.length - 1) {
+                        return;
+                    }
+                    return '((' + item + ' - ' + this.feature_averages[index].toFixed(2) + ')/' + this.feature_ranges[index].toFixed(2) + '*' + weights[index].toFixed(2)
+                }).join(' + ');
                 equationString += weights.at(-1);
+                this.graphModel(keys, inputs, scaled_inputs, weights);
                 finishedCallback(equationString);
             });
         }
 
         this.scaleFeatures = function scaleFeatures(features) {
             return this.transposeArray(
-                       features.map( (feature, index) =>
-                           feature.map(instance => 
-                               (instance - this.feature_averages[index]) / this.feature_ranges[index]
-                           )
-                       )
+                features.map((feature, index) =>
+                    feature.map(instance =>
+                        (instance - this.feature_averages[index]) / this.feature_ranges[index]
                     )
+                )
+            )
         }
 
-        this.trainModel = async function trainModel(inputs, scaled_inputs, targets, callback) {
+        this.trainModel = async function trainModel(scaled_inputs, targets, callback) {
             this.model = tf.sequential();
             this.model.add(tf.layers.dense({ units: 1, inputShape: [scaled_inputs[0].length] }));
             const optimizer = tf.train.sgd(0.1);
@@ -59,13 +62,12 @@ class MultipleVariable {
             const xs = tf.tensor2d(scaled_inputs);
             const ys = tf.tensor2d(targets, [targets.length, 1]);
             await this.model.fit(xs, ys, { epochs: 100 });
-            
+
             const weights = this.model.getWeights()[0].dataSync();
             const weights1 = this.model.getWeights()[1].dataSync();
             if (callback && typeof callback === 'function') {
                 callback([...weights, ...weights1]);
             }
-            // this.graphModel(inputs, scaled_inputs);
         }
 
         this.transposeArray = function transposeArray(arr) {
@@ -87,8 +89,8 @@ class MultipleVariable {
                 return `rgb(${r}, ${g}, ${b})`;
             }
             console.log("datasets:", datasets);
-            const initialData = datasets.map( (dataset, index) => {
-                const randomColor = getRandomRGB();
+            const initialData = datasets.map((dataset, index) => {
+                const randomColor = 'rgba(255, 99, 132, 1)';//getRandomRGB();
                 return {
                     label: keys[index],
                     data: dataset,
@@ -106,23 +108,30 @@ class MultipleVariable {
             return;
         }
 
-        this.graphModel = function graphModel(inputs, scaled_inputs) {
-            const xValues = [Math.min(...inputs), Math.max(...inputs)];
-            const yValues = [(this.model.predict(tf.tensor2d([Math.min(...scaled_inputs)], [1, 1]))).dataSync()[0],
-            (this.model.predict(tf.tensor2d([Math.max(...scaled_inputs)], [1, 1]))).dataSync()[0]];
-            const lineData = {
-                label: 'Model',
-                data: [
-                    { x: xValues[0], y: yValues[0] },
-                    { x: xValues[1], y: yValues[1] }
-                ],
-                backgroundColor: 'rgba(255, 99, 132, 1)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                showLine: true,
-                pointStyle: false
-            };
+        this.graphModel = function graphModel(keys, inputs, scaled_inputs, weights) {
 
-            this.chart.data.datasets.push(lineData);
+            const transposedInputs = this.transposeArray(inputs);
+            const xValues = transposedInputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
+            const transposed_scaled_inputs = this.transposeArray(scaled_inputs);
+            const min_max_tci = transposed_scaled_inputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
+            const yValues = min_max_tci.map( (feature, index) => feature.map(value => (value * weights[index]) + weights.at(-1)));
+
+            xValues.forEach((value, index) => {
+                const lineData = {
+                    label: keys[index],
+                    data: [
+                        { x: xValues[index][0], y: yValues[index][0] },
+                        { x: xValues[index][1], y: yValues[index][1] }
+                    ],
+                    backgroundColor: 'rgba(255, 99, 132, 1)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    showLine: true,
+                    pointStyle: false,
+                    hidden: index != 0
+                };
+    
+                this.chart.data.datasets.push(lineData);
+            });
             this.chart.update();
         }
     }
