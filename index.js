@@ -11,6 +11,7 @@ function onNavButtonClick(file) {
     document.getElementById('drop-area').hidden = false;
     setChartVisible(false);
     document.getElementById('equation').innerText = '';
+    document.getElementById('predictions').innerHTML = '';
     if (file == 'univariate.js') {
         method = new Univarite(myChart);
         document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
@@ -180,6 +181,7 @@ function handleFiles(files) {
         if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
             reader.readAsArrayBuffer(file);
             reader.onload = function (e) {
+                document.getElementById('predictions').innerHTML = '';
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
@@ -209,8 +211,6 @@ function handleFiles(files) {
                     }
                     document.getElementById('equation').innerHTML = "prediction = " + equationString + "<br><br>" + featureImpactsString;
                     updateChartMaxHeight();
-                    const predictions = method.parseJsonAndPredict(dataToPredict);
-                    console.log("predictions:", predictions);
 
                     function generateTableHTML(data, lastColumnData) {
                         if (data.length === 0) return '';
@@ -236,9 +236,12 @@ function handleFiles(files) {
                     
                         return tableHTML;
                     }
-                    
-                    const tableHTML = generateTableHTML(dataToPredict, predictions);
-                    document.getElementById('predictions').innerHTML = tableHTML;                    
+                    if ( emptyRowIndex != -1 ) {
+                        const predictions = method.parseJsonAndPredict(dataToPredict);
+                        console.log("predictions:", predictions);
+                        const tableHTML = generateTableHTML(dataToPredict, predictions);
+                        document.getElementById('predictions').innerHTML = tableHTML;    
+                    }                
                 });
             };
         } else {
