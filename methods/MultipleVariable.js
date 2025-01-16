@@ -4,6 +4,7 @@ class MultipleVariable {
 
         this.feature_averages = [];
         this.feature_ranges = [];
+        this.weights = [];
         this.model;
         this.chart = chart;
 
@@ -12,27 +13,54 @@ class MultipleVariable {
             this.feature_ranges = features.map(feature => Math.max(...feature) - Math.min(...feature));
         }
 
+        this.parseJsonToData = function parseJsonToData(json, trainingData = true) {
+            var keys = Object.keys(json[0]);
+            if (!trainingData) {
+                keys.push('empty');
+            }
+
+            const inputs = json.map(obj => {
+                const entries = Object.entries(obj);
+                const filteredEntries = entries.filter(([key]) => key !== keys.at(-1));
+                const values = filteredEntries.map(([_, value]) => value);
+                return values;
+            });
+
+            const targets = json.map(obj => {
+                const entries = Object.entries(obj);
+                const filteredEntries = entries.filter(([key]) => key === keys.at(-1));
+                const values = filteredEntries.map(([_, value]) => value);
+                return values;
+            }).flat();
+
+            return { keys, inputs, targets };
+        }
+
+        this.parseJsonAndPredict = function parseJsonAndPredict(json) {
+            const jsonData = this.parseJsonToData(json, false);
+            const predictions = this.predict(jsonData.inputs, this.weights);
+            return predictions;
+        }
+
         this.trainModelAndGraphData = function (json, initialCallback, finishedCallback) {
-            const keys = Object.keys(json[0]);
-            const inputs = json.map(obj => Object.entries(obj)
-                .filter(([key]) => key !== keys.at(-1))
-                .map(([_, value]) => value)
-            );
-            const targets = json.map(obj => Object.entries(obj)
-                .filter(([key]) => key == keys.at(-1))
-                .map(([_, value]) => value)
-            ).flat();
+            const jsonData = this.parseJsonToData(json);
+            const keys = jsonData.keys;
+            const inputs = jsonData.inputs;
+            const targets = jsonData.targets;
 
             this.graphInitialData(inputs, targets, keys, initialCallback);
             const transposedFeatures = this.transposeArray(inputs);
             this.calculateScalers(transposedFeatures);
+            console.log("inputs being passed to OG scale features:", transposedFeatures);
             const scaled_inputs = this.scaleFeatures(transposedFeatures);
+            console.log("outputs recieved from OG scale features:", scaled_inputs);
             this.trainModel(scaled_inputs, targets, (weights) => {
+                this.weights = weights;
                 var equationString = keys.map((item, index) => {
                     if (index == keys.length - 1) { return; }
                     return '((' + item + ' - ' + this.feature_averages[index].toFixed(2) + ')/' + this.feature_ranges[index].toFixed(2) + '*' + weights[index].toFixed(2)
                 }).join(' + ');
-                equationString += weights.at(-1);
+                equationString += weights.at(-1).toFixed(2);
                 this.graphModel(keys, inputs, scaled_inputs, weights);
                 const featureImpacts = this.calculateFeatureImpact(weights.slice(0, -1));
                 finishedCallback(equationString, featureImpacts);
@@ -84,12 +112,15 @@ class MultipleVariable {
             return { w, b };
         }
 
-        this.predict = function predict(m, x, b) {
-            console.log("m:", m);
-            console.log("x:", x);
-            console.log("b:", b);
-            let dotProduct = m.reduce((sum, value, index) => sum + value * x[index], 0);
-            return dotProduct + b;
+        this.predict = function predict(inputs, weights) {
+            const scaled_inputs = this.scaleFeatures(this.transposeArray(inputs));
+            const bias = weights.pop();
+            const predictions = scaled_inputs.map(input => {
+                return weights.reduce((inputPrediction, weight, k) => {
+                    return inputPrediction + input[k] * weight;
+                }, bias);
+            });
+            return predictions;
         }
 
         this.predict_single_feature = function predict_single_feature(m, x, b) {

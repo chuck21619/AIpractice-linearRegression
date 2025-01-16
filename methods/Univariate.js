@@ -27,7 +27,7 @@ class Univarite {
                                             }
                                             return '((' + item + '-' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + ')' + '*' + weights[index].toFixed(2)
                                             }).join(' + ');
-                equationString += weights.at(-1);
+                equationString += weights.at(-1).toFixed(2);
                 finishedCallback(equationString, []);
             });
         }

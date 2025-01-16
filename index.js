@@ -184,19 +184,23 @@ function handleFiles(files) {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet);
-
-                setChartVisible(true);
-                method.trainModelAndGraphData(json, () => {
+                const json = XLSX.utils.sheet_to_json(worksheet, { blankrows: true });
+                const emptyRowIndex = json.findIndex(row => Object.values(row).every(value => value === null || value === '' || value === undefined));
+                const trainingData = json.slice(0, emptyRowIndex);
+                const dataToPredict = json.slice(emptyRowIndex + 1);
+                
+                method.trainModelAndGraphData(trainingData, () => {
                     updateChartMaxHeight();
                     if (method instanceof MultipleVariable) {
                         for (let i = 1; i < myChart.data.datasets.length; i++) {
                             myChart.data.datasets[i].hidden = true;
                         }
+                        setChartVisible(true);
                         myChart.update();
                     }
                 }, function (equationString, featureImpacts) {
                     const keys = Object.keys(json[0]);
+                    console.log("keys:", keys);
                     var featureImpactsString = ""
                     if (method instanceof MultipleVariable) {
                         featureImpactsString = featureImpacts.reduce((string, impact, index) => {
@@ -205,6 +209,36 @@ function handleFiles(files) {
                     }
                     document.getElementById('equation').innerHTML = "prediction = " + equationString + "<br><br>" + featureImpactsString;
                     updateChartMaxHeight();
+                    const predictions = method.parseJsonAndPredict(dataToPredict);
+                    console.log("predictions:", predictions);
+
+                    function generateTableHTML(data, lastColumnData) {
+                        if (data.length === 0) return '';
+                        const headers = Object.keys(data[0]);
+                        headers.push(keys.at(-1) + " prediction");
+                        const headerHTML = headers.map(header => `<th>${header}</th>`).join('');
+                        const rowsHTML = data.map((row, index) => {
+                            return `<tr>` +
+                                headers.slice(0, -1).map(header => `<td>${row[header]}</td>`).join('') +
+                                `<td>${lastColumnData[index].toFixed(2)}</td>` +
+                                `</tr>`;
+                        }).join('');
+                        const tableHTML = `
+                            <table border="1">
+                                <thead>
+                                    <tr>${headerHTML}</tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHTML}
+                                </tbody>
+                            </table>
+                        `;
+                    
+                        return tableHTML;
+                    }
+                    
+                    const tableHTML = generateTableHTML(dataToPredict, predictions);
+                    document.getElementById('predictions').innerHTML = tableHTML;                    
                 });
             };
         } else {
