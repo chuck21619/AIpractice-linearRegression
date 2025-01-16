@@ -12,9 +12,12 @@ nav {
     width: 200px;
     background-color: #102b30;
     padding: 20px;
-    height: 100vh;
     box-sizing: border-box;
     flex-shrink: 0;
+    overflow-y: auto;
+    position: fixed;
+    top: 0;
+    bottom: 0;
 }
 nav ul {
     list-style: none;
@@ -43,6 +46,7 @@ nav ul li a.active {
     flex-shrink: 1;
     min-width: 0;
     padding: 20px;
+    margin-left: 200px;
 }
 #drop-area {
     border: 2px dashed #ccc;

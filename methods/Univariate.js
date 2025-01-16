@@ -6,10 +6,41 @@ class Univarite {
         this.feature_range;
         this.model;
         this.chart = chart;
+        this.weight;
+        this.bias;
 
         this.calculateScalers = function(features) {
             this.feature_average = features.reduce((a, b) => a + b, 0) / features.length;
             this.feature_range = Math.max(...features) - Math.min(...features)
+        }
+
+        this.parseJsonToData = function parseJsonToData(json, trainingData = true) {
+            var keys = Object.keys(json[0]);
+            if (!trainingData) {
+                keys.push('empty');
+            }
+
+            const inputs = json.map(obj => {
+                const entries = Object.entries(obj);
+                const filteredEntries = entries.filter(([key]) => key !== keys.at(-1));
+                const values = filteredEntries.map(([_, value]) => value);
+                return values;
+            });
+
+            const targets = json.map(obj => {
+                const entries = Object.entries(obj);
+                const filteredEntries = entries.filter(([key]) => key === keys.at(-1));
+                const values = filteredEntries.map(([_, value]) => value);
+                return values;
+            }).flat();
+
+            return { keys, inputs, targets };
+        }
+
+        this.parseJsonAndPredict = function parseJsonAndPredict(json) {
+            const jsonData = this.parseJsonToData(json, false);
+            const predictions = this.predict(jsonData.inputs, this.weights);
+            return predictions;
         }
 
         this.trainModelAndGraphData = function(json, initialCallback, finishedCallback) {
@@ -19,15 +50,16 @@ class Univarite {
             this.graphInitialData(inputs, targets, initialCallback);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);
-            this.trainModel(inputs, scaled_inputs, targets, (weights) => {
-                // ((x - average)/range)*
+            
+            this.trainModel(scaled_inputs, targets, (results) => {
+                this.weight = results.w;
+                this.bias = results.b;
                 var equationString = keys.map((item, index) => {
-                                            if ( index == keys.length -1 ) {
-                                                return;
-                                            }
-                                            return '((' + item + '-' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + ')' + '*' + weights[index].toFixed(2)
-                                            }).join(' + ');
-                equationString += weights.at(-1).toFixed(2);
+                    if (index == keys.length - 1) { return; }
+                    return '((' + item + ' - ' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + '*' + this.weight.toFixed(2)
+                }).join(' + ');
+                equationString += this.bias.toFixed(2);
+                this.graphModel(inputs, scaled_inputs, this.weight, this.bias);
                 finishedCallback(equationString, []);
             });
         }
@@ -36,23 +68,46 @@ class Univarite {
             return features.map(a => (a - this.feature_average) / this.feature_range)
         }
 
-        this.trainModel = async function trainModel(inputs, scaled_inputs, targets, callback) {
-            this.model = tf.sequential();
-            this.model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
-            const optimizer = tf.train.sgd(0.1);
-            this.model.compile({ optimizer: optimizer, loss: 'meanSquaredError' });
-            const xs = tf.tensor2d(scaled_inputs, [scaled_inputs.length, 1]);
-            const ys = tf.tensor2d(targets, [targets.length, 1]);
-            await this.model.fit(xs, ys, { epochs: 100 });
-            
-            const weights = this.model.getWeights()[0].dataSync();
-            const weights1 = this.model.getWeights()[1].dataSync();
-            if (callback && typeof callback === 'function') {
-                callback([...weights, ...weights1]);
-            }
-            this.graphModel(inputs, scaled_inputs);
+        this.trainModel = function trainModel(scaled_inputs, targets, callback) {
+            let wInit = 0;
+            let bInit = 0;
+            let iterations = 10000;
+            let tmpAlpha = 0.01;
+            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
+            callback({ w, b });
         }
 
+        this.computeGradient = function computeGradient(x, y, w, b) {
+            const m = x.length;
+            let dj_dw = 0;
+            let dj_db = 0;
+        
+            for (let i = 0; i < m; i++) {
+                const cost = (w * x[i] + b) - y[i];
+                dj_dw += cost * x[i];
+                dj_db += cost;
+            }
+        
+            dj_dw /= m;
+            dj_db /= m;
+        
+            return [dj_dw, dj_db];
+        }
+        
+
+        this.gradientDescent = function gradientDescent(x, y, w_in, b_in, alpha, num_iters, gradientFunction) {
+            let w = w_in;
+            let b = b_in;
+        
+            for (let i = 0; i < num_iters; i++) {
+                let [dj_dw, dj_db] = gradientFunction(x, y, w, b);
+                w = w - alpha * dj_dw;
+                b = b - alpha * dj_db;
+            }
+        
+            return { w, b };
+        }
+        
         this.graphInitialData = function graphInitialData(inputs, targets, callback) {
             const initialData = {
                 label: 'Data',
@@ -66,22 +121,24 @@ class Univarite {
             return;
         }
 
-        this.graphModel = function graphModel(inputs, scaled_inputs) {
-            const xValues = [Math.min(...inputs), Math.max(...inputs)];
-            const yValues = [(this.model.predict(tf.tensor2d([Math.min(...scaled_inputs)], [1, 1]))).dataSync()[0],
-            (this.model.predict(tf.tensor2d([Math.max(...scaled_inputs)], [1, 1]))).dataSync()[0]];
+        this.predict = function predict(inputs, weight, bias) {
+            return inputs.map( input => input*weight + bias );
+        }
+
+        this.graphModel = function graphModel(inputs, scaled_inputs, weight, bias) {
+            const xValues = [Math.min(...scaled_inputs), Math.max(...scaled_inputs)];
+            const yValues = this.predict(xValues, weight, bias);
             const lineData = {
                 label: 'Model',
                 data: [
-                    { x: xValues[0], y: yValues[0] },
-                    { x: xValues[1], y: yValues[1] }
+                    { x: Math.min(...inputs), y: yValues[0] },
+                    { x: Math.max(...inputs), y: yValues[1] }
                 ],
                 backgroundColor: 'rgba(255, 99, 132, 1)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 showLine: true,
                 pointStyle: false
             };
-    
             this.chart.data.datasets.push(lineData);
             this.chart.update();
         }

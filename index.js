@@ -193,21 +193,20 @@ function handleFiles(files) {
                 
                 method.trainModelAndGraphData(trainingData, () => {
                     updateChartMaxHeight();
+                    setChartVisible(true);
+                    myChart.update();
                     if (method instanceof MultipleVariable) {
                         for (let i = 1; i < myChart.data.datasets.length; i++) {
                             myChart.data.datasets[i].hidden = true;
                         }
-                        setChartVisible(true);
-                        myChart.update();
                     }
                 }, function (equationString, featureImpacts) {
                     const keys = Object.keys(json[0]);
-                    console.log("keys:", keys);
                     var featureImpactsString = ""
                     if (method instanceof MultipleVariable) {
                         featureImpactsString = featureImpacts.reduce((string, impact, index) => {
                             return string + keys[index] + "=" + (impact * 100).toFixed(0) + "% ";
-                        }, "importance: ");
+                        }, "feature importance: ");
                     }
                     document.getElementById('equation').innerHTML = "prediction = " + equationString + "<br><br>" + featureImpactsString;
                     updateChartMaxHeight();
@@ -238,7 +237,6 @@ function handleFiles(files) {
                     }
                     if ( emptyRowIndex != -1 ) {
                         const predictions = method.parseJsonAndPredict(dataToPredict);
-                        console.log("predictions:", predictions);
                         const tableHTML = generateTableHTML(dataToPredict, predictions);
                         document.getElementById('predictions').innerHTML = tableHTML;    
                     }                

@@ -51,9 +51,7 @@ class MultipleVariable {
             this.graphInitialData(inputs, targets, keys, initialCallback);
             const transposedFeatures = this.transposeArray(inputs);
             this.calculateScalers(transposedFeatures);
-            console.log("inputs being passed to OG scale features:", transposedFeatures);
             const scaled_inputs = this.scaleFeatures(transposedFeatures);
-            console.log("outputs recieved from OG scale features:", scaled_inputs);
             this.trainModel(scaled_inputs, targets, (weights) => {
                 this.weights = weights;
                 var equationString = keys.map((item, index) => {
@@ -133,9 +131,7 @@ class MultipleVariable {
             let iterations = 10000;
             let tmpAlpha = 0.01;
             let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
-            if (callback && typeof callback === 'function') {
-                callback([...w, b]);
-            }
+            callback([...w, b]);
         }
 
         this.transposeArray = function transposeArray(arr) {
