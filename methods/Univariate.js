@@ -25,7 +25,7 @@ class Univarite {
                 const filteredEntries = entries.filter(([key]) => key !== keys.at(-1));
                 const values = filteredEntries.map(([_, value]) => value);
                 return values;
-            });
+            }).flat();
 
             const targets = json.map(obj => {
                 const entries = Object.entries(obj);
@@ -39,14 +39,16 @@ class Univarite {
 
         this.parseJsonAndPredict = function parseJsonAndPredict(json) {
             const jsonData = this.parseJsonToData(json, false);
-            const predictions = this.predict(jsonData.inputs, this.weights);
+            const scaled_inputs = this.scaleFeatures(jsonData.inputs);
+            const predictions = this.predict(scaled_inputs, this.weight, this.bias);
             return predictions;
         }
 
         this.trainModelAndGraphData = function(json, initialCallback, finishedCallback) {
-            const keys = Object.keys(json[0]);
-            const inputs = json.map(item => item[keys[0]]);
-            const targets = json.map(item => item[keys[1]]);
+            const jsonData = this.parseJsonToData(json);
+            const keys = jsonData.keys;
+            const inputs = jsonData.inputs;
+            const targets = jsonData.targets;
             this.graphInitialData(inputs, targets, initialCallback);
             this.calculateScalers(inputs);
             const scaled_inputs = this.scaleFeatures(inputs);

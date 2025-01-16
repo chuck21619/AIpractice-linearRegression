@@ -43,7 +43,9 @@ class MultipleVariable {
         }
 
         this.trainModelAndGraphData = function (json, initialCallback, finishedCallback) {
+            console.log("json:", json);
             const jsonData = this.parseJsonToData(json);
+            console.log("jsonData:", jsonData);
             const keys = jsonData.keys;
             const inputs = jsonData.inputs;
             const targets = jsonData.targets;
