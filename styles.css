@@ -9,7 +9,7 @@ body {
     margin: 0;
 }
 nav {
-    width: 200px;
+    width: 220px;
     background-color: #102b30;
     padding: 20px;
     box-sizing: border-box;
@@ -46,7 +46,7 @@ nav ul li a.active {
     flex-shrink: 1;
     min-width: 0;
     padding: 20px;
-    margin-left: 200px;
+    margin-left: 220px;
 }
 #drop-area {
     border: 2px dashed #ccc;

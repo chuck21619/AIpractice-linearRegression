@@ -58,7 +58,7 @@ class Univarite {
                 this.bias = results.b;
                 var equationString = keys.map((item, index) => {
                     if (index == keys.length - 1) { return; }
-                    return '((' + item + ' - ' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + '*' + this.weight.toFixed(2)
+                    return '((' + item + ' - ' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + ')*' + this.weight.toFixed(2)
                 }).join(' + ');
                 equationString += this.bias.toFixed(2);
                 this.graphModel(inputs, scaled_inputs, this.weight, this.bias);

@@ -1,5 +1,6 @@
 import Univarite from './methods/Univariate.js';
 import MultipleVariable from './methods/MultipleVariable.js';
+import Polynomial from './methods/Polynomial.js';
 
 var method;
 function onNavButtonClick(file) {
@@ -12,15 +13,21 @@ function onNavButtonClick(file) {
     setChartVisible(false);
     document.getElementById('equation').innerText = '';
     document.getElementById('predictions').innerHTML = '';
-    if (file == 'univariate.js') {
+    if (file == 'Univariate.js') {
+        console.log("test");
         method = new Univarite(myChart);
         document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
         document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial";
     }
-    else if (file == 'multipleVariable.js') {
+    else if (file == 'MultipleVariable.js') {
         document.getElementById('title').innerHTML = "Multiple Variable<br>Linear Regression";
         document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
         method = new MultipleVariable(myChart);
+    }
+    else if (file == 'Polynomial.js') {
+        document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
+        document.getElementById('subtitle').innerHTML = "Mean Normalized. Polynomial";
+        method = new Polynomial(myChart);
     }
 }
 
