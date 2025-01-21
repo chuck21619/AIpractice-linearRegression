@@ -1,6 +1,7 @@
 import Univarite from './methods/Univariate.js';
 import MultipleVariable from './methods/MultipleVariable.js';
 import Polynomial from './methods/Polynomial.js';
+import PolynomialCubed from './methods/PolynomialCubed.js';
 
 var method;
 function onNavButtonClick(file) {
@@ -25,8 +26,13 @@ function onNavButtonClick(file) {
     }
     else if (file == 'Polynomial.js') {
         document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "Mean Normalized. Polynomial";
+        document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input and input squared";
         method = new Polynomial(myChart);
+    }
+    else if (file == 'PolynomialCubed.js') {
+        document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
+        document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input, input squared, and input cubed";
+        method = new PolynomialCubed(myChart);
     }
 }
 
