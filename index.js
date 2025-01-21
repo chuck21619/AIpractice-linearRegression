@@ -14,7 +14,6 @@ function onNavButtonClick(file) {
     document.getElementById('equation').innerText = '';
     document.getElementById('predictions').innerHTML = '';
     if (file == 'Univariate.js') {
-        console.log("test");
         method = new Univarite(myChart);
         document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
         document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial";

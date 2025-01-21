@@ -7,6 +7,7 @@ class Polynomial {
         this.model;
         this.chart = chart;
         this.weight;
+        this.weight_squared;
         this.bias;
 
         this.calculateScalers = function(features) {
@@ -54,15 +55,18 @@ class Polynomial {
             const scaled_inputs = this.scaleFeatures(inputs);
             
             this.trainModel(scaled_inputs, targets, (results) => {
+                this.weight_squared = results.w_squared;
                 this.weight = results.w;
                 this.bias = results.b;
                 var equationString = keys.map((item, index) => {
                     if (index == keys.length - 1) { return; }
                     const scaledString = '((' + item + ' - ' + this.feature_average.toFixed(2) + ')/' + this.feature_range.toFixed(2) + ')';
-                    return '(' + this.weight.toFixed(2) + '*' + scaledString  + '^2)' + ' + ' + '(' + this.weight.toFixed(2) + '*' + scaledString  + ')';
+                    return '(' + this.weight_squared.toFixed(2) + '*' + scaledString  + '^2)' + ' + ' + '(' + this.weight.toFixed(2) + '*' + scaledString  + ')';
                 }).join(' + ');
                 equationString += this.bias.toFixed(2);
-                this.graphModel(inputs, scaled_inputs, this.weight, this.bias);
+                this.graphModel(inputs, scaled_inputs, this.weight_squared, this.weight, this.bias);
+                const featureImpacts = this.calculateFeatureImpact([results.w_squared, results.w]);
+                console.log(featureImpacts);
                 finishedCallback(equationString, []);
             });
         }
@@ -72,43 +76,49 @@ class Polynomial {
         }
 
         this.trainModel = function trainModel(scaled_inputs, targets, callback) {
+            let w_squared_init = 0;
             let wInit = 0;
             let bInit = 0;
-            let iterations = 10000;
+            let iterations = 100000;
             let tmpAlpha = 0.01;
-            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
-            callback({ w, b });
+            let { w_squared, w, b } = this.gradientDescent(scaled_inputs, targets, w_squared_init, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
+            callback({ w_squared, w, b });
         }
 
-        this.computeGradient = function computeGradient(x, y, w, b) {
+        this.computeGradient = function computeGradient(x, y, w_squared, w, b) {
             const m = x.length;
+            let dj_dw_squared = 0;
             let dj_dw = 0;
             let dj_db = 0;
-        
+            
             for (let i = 0; i < m; i++) {
-                const cost = (w*x[i]**2 + w*x[i] + b) - y[i];
+                const cost = (w_squared*x[i]**2 + w*x[i] + b) - y[i];
+                dj_dw_squared += cost * x[i]**2;
                 dj_dw += cost * x[i];
                 dj_db += cost;
             }
         
+            dj_dw_squared /= m;
             dj_dw /= m;
             dj_db /= m;
         
-            return [dj_dw, dj_db];
+            return [dj_dw_squared, dj_dw, dj_db];
         }
         
 
-        this.gradientDescent = function gradientDescent(x, y, w_in, b_in, alpha, num_iters, gradientFunction) {
+        this.gradientDescent = function gradientDescent(x, y, w_squared_in, w_in, b_in, alpha, num_iters, gradientFunction) {
+            let w_squared = w_squared_in;
             let w = w_in;
             let b = b_in;
         
             for (let i = 0; i < num_iters; i++) {
-                let [dj_dw, dj_db] = gradientFunction(x, y, w, b);
+                let [dj_dw_squared, dj_dw, dj_db] = gradientFunction(x, y, w_squared, w, b);
+                w_squared = w_squared - alpha * dj_dw_squared;
                 w = w - alpha * dj_dw;
                 b = b - alpha * dj_db;
             }
         
-            return { w, b };
+            return { w_squared, w, b };
         }
         
         this.graphInitialData = function graphInitialData(inputs, targets, callback) {
@@ -124,8 +134,8 @@ class Polynomial {
             return;
         }
 
-        this.predict = function predict(inputs, weight, bias) {
-            return inputs.map( input => weight*input**2 + input*weight + bias );
+        this.predict = function predict(inputs, weight_squared, weight, bias) {
+            return inputs.map( input => weight_squared*input**2 + input*weight + bias );
         }
 
         this.linSpace = function linSpace(startValue, endValue, numValues) {
@@ -137,11 +147,11 @@ class Polynomial {
             return values;
         }
 
-        this.graphModel = function graphModel(inputs, scaled_inputs, weight, bias) {
+        this.graphModel = function graphModel(inputs, scaled_inputs, weight_squared, weight, bias) {
             const numValues = 20;
             const xValues = this.linSpace(Math.min(...inputs), Math.max(...inputs), numValues);
             const scaledXValues = this.linSpace(Math.min(...scaled_inputs), Math.max(...scaled_inputs), numValues);
-            const yValues = this.predict(scaledXValues, weight, bias);
+            const yValues = this.predict(scaledXValues, weight_squared, weight, bias);
 
 
             var data = [];
@@ -159,6 +169,13 @@ class Polynomial {
             };
             this.chart.data.datasets.push(lineData);
             this.chart.update();
+        }
+        
+        this.calculateFeatureImpact = function calculateFeatureImpact(weights) {
+            const absoluteCoefficients = weights.map(coef => Math.abs(coef));
+            const totalImportance = absoluteCoefficients.reduce((sum, coef) => sum + coef, 0);
+            const normalizedImportance = absoluteCoefficients.map(coef => coef / totalImportance);
+            return normalizedImportance;
         }
     }
 }

@@ -75,34 +75,25 @@ class Univarite {
             let bInit = 0;
             let iterations = 10000;
             let tmpAlpha = 0.01;
-            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
+            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations);
             callback({ w, b });
         }
 
         this.computeGradient = function computeGradient(x, y, w, b) {
             const m = x.length;
-            let dj_dw = 0;
-            let dj_db = 0;
-        
-            for (let i = 0; i < m; i++) {
-                const cost = (w * x[i] + b) - y[i];
-                dj_dw += cost * x[i];
-                dj_db += cost;
-            }
-        
-            dj_dw /= m;
-            dj_db /= m;
-        
+            const predictions = this.predict(x, w, b);
+            const costs = predictions.map( (prediction, index) => prediction - y[index] );
+            const dj_dw = costs.reduce( (accumulator, cost, index) => { return accumulator + 2*(cost * x[index]) }, 0 ) / m;
+            const dj_db = costs.reduce( (accumulator, cost)        => { return accumulator + 2*cost              }, 0 ) / m;
             return [dj_dw, dj_db];
-        }
-        
+        }        
 
-        this.gradientDescent = function gradientDescent(x, y, w_in, b_in, alpha, num_iters, gradientFunction) {
+        this.gradientDescent = function gradientDescent(x, y, w_in, b_in, alpha, num_iters) {
             let w = w_in;
             let b = b_in;
         
             for (let i = 0; i < num_iters; i++) {
-                let [dj_dw, dj_db] = gradientFunction(x, y, w, b);
+                let [dj_dw, dj_db] = this.computeGradient(x, y, w, b);
                 w = w - alpha * dj_dw;
                 b = b - alpha * dj_db;
             }

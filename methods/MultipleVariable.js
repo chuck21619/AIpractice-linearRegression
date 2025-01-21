@@ -38,7 +38,8 @@ class MultipleVariable {
 
         this.parseJsonAndPredict = function parseJsonAndPredict(json) {
             const jsonData = this.parseJsonToData(json, false);
-            const predictions = this.predict(jsonData.inputs, this.weights);
+            const scaled_inputs = this.scaleFeatures(this.transposeArray(jsonData.inputs));
+            const predictions = this.predict(scaled_inputs, this.weights);
             return predictions;
         }
 
@@ -75,33 +76,32 @@ class MultipleVariable {
             )
         }
 
-        this.computeGradient = function computeGradient(features, targets, weights, bias) {
-            const numberOfExamples = features.length;
-            const numberOfFeatures = features[0].length;
+        this.computeGradient = function computeGradient(inputs, targets, weights, bias) {
+            const numberOfExamples = inputs.length;
+            const numberOfFeatures = inputs[0].length;
             let dj_dw = new Array(numberOfFeatures).fill(0);
             let dj_db = 0.0;
 
-            for (let m = 0; m < numberOfExamples; m++) {
-                for (let n = 0; n < numberOfFeatures; n++) {
-                    let prediction = features[m].reduce((sum, feature, idx) => sum + feature * weights[idx], 0) + bias;
-                    dj_dw[n] += (prediction - targets[m]) * features[m][n];
-                }
-                let prediction = features[m].reduce((sum, feature, idx) => sum + feature * weights[idx], 0) + bias;
-                dj_db += (prediction - targets[m]);
-            }
+            inputs.forEach((input, input_index) => {
+                let prediction = this.predict([input], [...weights, bias])[0];
+                input.forEach((feature, feature_index) => {
+                    dj_dw[feature_index] += 2 * (prediction - targets[input_index]) * feature;
+                });
+                dj_db += 2 * (prediction - targets[input_index]);
+            });
 
-            dj_dw = dj_dw.map(grad => grad / numberOfExamples);
+            dj_dw = dj_dw.map(gradient => gradient / numberOfExamples);
             dj_db /= numberOfExamples;
 
             return { dj_dw, dj_db };
         }
 
-        this.gradientDescent = function gradientDescent(features, targets, wIn, bIn, alpha, numIters, gradientFunction) {
+        this.gradientDescent = function gradientDescent(features, targets, wIn, bIn, alpha, numIters) {
             let w = wIn;
             let b = bIn;
 
             for (let i = 0; i < numIters; i++) {
-                let { dj_dw, dj_db } = gradientFunction(features, targets, w, b);
+                let { dj_dw, dj_db } = this.computeGradient(features, targets, w, b);
                 for (let j = 0; j < w.length; j++) {
                     w[j] -= alpha * dj_dw[j];
                 }
@@ -111,9 +111,8 @@ class MultipleVariable {
         }
 
         this.predict = function predict(inputs, weights) {
-            const scaled_inputs = this.scaleFeatures(this.transposeArray(inputs));
             const bias = weights.pop();
-            const predictions = scaled_inputs.map(input => {
+            const predictions = inputs.map(input => {
                 return weights.reduce((inputPrediction, weight, k) => {
                     return inputPrediction + input[k] * weight;
                 }, bias);
@@ -130,7 +129,7 @@ class MultipleVariable {
             let bInit = 0;
             let iterations = 10000;
             let tmpAlpha = 0.01;
-            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations, this.computeGradient);
+            let { w, b } = this.gradientDescent(scaled_inputs, targets, wInit, bInit, tmpAlpha, iterations);
             callback([...w, b]);
         }
 
