@@ -14,25 +14,35 @@ function onNavButtonClick(file) {
     setChartVisible(false);
     document.getElementById('equation').innerText = '';
     document.getElementById('predictions').innerHTML = '';
-    if (file == 'Univariate.js') {
-        method = new Univarite(myChart);
-        document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial";
+    if (file == 'About.js') {
+        document.getElementById('drop-area').hidden = true;
+        document.getElementById('title').innerHTML = originalTitle;
+        document.getElementById('subtitle').innerHTML = originalSubtitle;
+        document.getElementById('equation').innerHTML = originalEquation;
+        document.getElementById('images').innerHTML = originalImages;
     }
-    else if (file == 'MultipleVariable.js') {
-        document.getElementById('title').innerHTML = "Multiple Variable<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
-        method = new MultipleVariable(myChart);
-    }
-    else if (file == 'Polynomial.js') {
-        document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input and input squared";
-        method = new Polynomial(myChart);
-    }
-    else if (file == 'PolynomialCubed.js') {
-        document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
-        document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input, input squared, and input cubed";
-        method = new PolynomialCubed(myChart);
+    else {
+        document.getElementById('images').innerHTML = '';
+        if (file == 'Univariate.js') {
+            method = new Univarite(myChart);
+            document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial";
+        }
+        else if (file == 'MultipleVariable.js') {
+            document.getElementById('title').innerHTML = "Multiple Variable<br>Linear Regression";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
+            method = new MultipleVariable(myChart);
+        }
+        else if (file == 'Polynomial.js') {
+            document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input and input squared";
+            method = new Polynomial(myChart);
+        }
+        else if (file == 'PolynomialCubed.js') {
+            document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input, input squared, and input cubed";
+            method = new PolynomialCubed(myChart);
+        }
     }
 }
 
@@ -41,18 +51,37 @@ window.addEventListener('resize', function () {
 });
 
 function updateChartMaxHeight() {
-    const chartElement = document.getElementById('myChart');
-    const chartBottom = chartElement.getBoundingClientRect().top;
-    const windowHeight = window.innerHeight - 20;
-    const maxChartHeight = windowHeight - chartBottom;
-    chartElement.style.maxHeight = maxChartHeight + 'px';
+    if (document.getElementById('myChart').style.visibility == 'hidden') {
+        document.getElementById('myChart').style.maxHeight = 0 + 'px';
+    }
+    else {
+        const chartElement = document.getElementById('myChart');
+        const chartBottom = chartElement.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight - 20;
+        const maxChartHeight = windowHeight - chartBottom;
+        chartElement.style.maxHeight = maxChartHeight + 'px';
+    }
 }
 
+var originalTitle;
+var originalSubtitle;
+var originalEquation;
+var originalImages;
 document.addEventListener('DOMContentLoaded', function () {
     hookUpNavButtons();
     setupDropArea();
     createChart();
     setChartVisible(false);
+    originalTitle = document.getElementById('title').innerHTML;
+    originalSubtitle = document.getElementById('subtitle').innerHTML;
+    originalEquation = document.getElementById('equation').innerHTML;
+    originalImages =  document.getElementById('images').innerHTML;
+
+    //set About button active
+    const navLinks = document.querySelectorAll('nav ul li a');
+    navLinks.forEach(link => link.classList.remove('active'));
+    const clickedLink = document.querySelector(`nav ul li a[data-jsFile="${'About.js'}"]`);
+    clickedLink.classList.add('active');
 });
 
 
@@ -202,7 +231,7 @@ function handleFiles(files) {
                 const emptyRowIndex = json.findIndex(row => Object.values(row).every(value => value === null || value === '' || value === undefined));
                 const trainingData = json.slice(0, emptyRowIndex);
                 const dataToPredict = json.slice(emptyRowIndex + 1);
-                
+
                 method.trainModelAndGraphData(trainingData, () => {
                     updateChartMaxHeight();
                     setChartVisible(true);
@@ -244,14 +273,14 @@ function handleFiles(files) {
                                 </tbody>
                             </table>
                         `;
-                    
+
                         return tableHTML;
                     }
-                    if ( emptyRowIndex != -1 ) {
+                    if (emptyRowIndex != -1) {
                         const predictions = method.parseJsonAndPredict(dataToPredict);
                         const tableHTML = generateTableHTML(dataToPredict, predictions);
-                        document.getElementById('predictions').innerHTML = tableHTML;    
-                    }                
+                        document.getElementById('predictions').innerHTML = tableHTML;
+                    }
                 });
             };
         } else {
@@ -268,4 +297,5 @@ function setChartVisible(showChart) {
         document.getElementById('myChart').style.visibility = 'hidden';
         myChart.clear();
     }
+    updateChartMaxHeight();
 }
