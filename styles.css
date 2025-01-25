@@ -58,3 +58,14 @@ nav ul li a.active {
 #drop-area.highlight {
     border-color: darkgreen;
 }
+
+#predictions {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#predictions th, #predictions td {
+    padding: 2px;
+    text-align: left;
+    border: 1px solid rgb(243, 243, 243);
+}

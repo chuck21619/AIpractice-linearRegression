@@ -2,6 +2,8 @@ import Univarite from './methods/Univariate.js';
 import MultipleVariable from './methods/MultipleVariable.js';
 import Polynomial from './methods/Polynomial.js';
 import PolynomialCubed from './methods/PolynomialCubed.js';
+import LogisticRegression from './methods/LogisticRegression.js';
+import NeuralNetwork from './methods/NeuralNetwork.js';
 
 var method;
 function onNavButtonClick(file) {
@@ -26,22 +28,32 @@ function onNavButtonClick(file) {
         if (file == 'Univariate.js') {
             method = new Univarite(myChart);
             document.getElementById('title').innerHTML = "Univariate<br>Linear Regression";
-            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial.";
         }
         else if (file == 'MultipleVariable.js') {
             document.getElementById('title').innerHTML = "Multiple Variable<br>Linear Regression";
-            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction.";
             method = new MultipleVariable(myChart);
         }
         else if (file == 'Polynomial.js') {
             document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
-            document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input and input squared";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input and input squared.";
             method = new Polynomial(myChart);
         }
         else if (file == 'PolynomialCubed.js') {
             document.getElementById('title').innerHTML = "Polynomial Univariate<br>Linear Regression";
-            document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input, input squared, and input cubed";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Features are input, input squared, and input cubed.";
             method = new PolynomialCubed(myChart);
+        }
+        else if (file == 'LogisticRegression.js') {
+            document.getElementById('title').innerHTML = "Univariate<br>Logistic Regression";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized.";
+            method = new LogisticRegression(myChart);
+        }
+        else if (file == 'NeuralNetwork.js') {
+            document.getElementById('title').innerHTML = "Neural Network";
+            document.getElementById('subtitle').innerHTML = "TODO: list number of layers, neurons. ReLu activation functions.";
+            method = new NeuralNetwork(myChart);
         }
     }
 }
@@ -75,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
     originalTitle = document.getElementById('title').innerHTML;
     originalSubtitle = document.getElementById('subtitle').innerHTML;
     originalEquation = document.getElementById('equation').innerHTML;
-    originalImages =  document.getElementById('images').innerHTML;
+    originalImages = document.getElementById('images').innerHTML;
 
     //set About button active
     const navLinks = document.querySelectorAll('nav ul li a');
@@ -249,7 +261,7 @@ function handleFiles(files) {
                             return string + keys[index] + "=" + (impact * 100).toFixed(0) + "% ";
                         }, "feature importance: ");
                     }
-                    document.getElementById('equation').innerHTML = "prediction = " + equationString + "<br><br>" + featureImpactsString;
+                    document.getElementById('equation').innerHTML = "Prediction = " + equationString + "<br><br>" + featureImpactsString;
                     updateChartMaxHeight();
 
                     function generateTableHTML(data, lastColumnData) {
