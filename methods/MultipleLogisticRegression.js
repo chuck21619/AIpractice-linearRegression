@@ -1,4 +1,4 @@
-class MultipleVariable {
+class MultipleLogisticRegression {
 
     constructor(chart) {
 
@@ -84,10 +84,11 @@ class MultipleVariable {
 
             inputs.forEach((input, input_index) => {
                 const prediction = this.predict([input], [...weights, bias])[0];
+                const dj_dz = prediction - targets[input_index];
                 input.forEach((feature, feature_index) => {
-                    dj_dw[feature_index] += 2 * (prediction - targets[input_index]) * feature;
+                    dj_dw[feature_index] += dj_dz * feature;
                 });
-                dj_db += 2 * (prediction - targets[input_index]);
+                dj_db += dj_dz;
             });
 
             dj_dw = dj_dw.map(gradient => gradient / numberOfExamples);
@@ -110,18 +111,22 @@ class MultipleVariable {
             return { w, b };
         }
 
+        this.sigmoid = function sigmoid(z) {
+            return 1 / (1 + Math.exp(-z));
+        }
+
         this.predict = function predict(inputs, weights) {
-            const bias = weights.pop();
+            const bias = weights.at(-1);
             const predictions = inputs.map(input => {
-                return weights.reduce((inputPrediction, weight, k) => {
+                return this.sigmoid((weights.slice(0, weights.length-1)).reduce((inputPrediction, weight, k) => {
                     return inputPrediction + input[k] * weight;
-                }, bias);
+                }, bias));
             });
             return predictions;
         }
 
         this.predict_single_feature = function predict_single_feature(m, x, b) {
-            return (m * x) + b
+            return this.sigmoid((m * x) + b)
         }
 
         this.trainModel = function trainModel(scaled_inputs, targets, callback) {
@@ -169,27 +174,44 @@ class MultipleVariable {
             return;
         }
 
-        this.graphModel = function graphModel(keys, inputs, scaled_inputs, weights) {
+        this.linSpace = function linSpace(startValue, endValue, numValues) {
+            const step = (endValue - startValue) / numValues;
+            var values = [];
+            for (let i = 0; i <= numValues; i++) {
+                values.push(startValue + step * i);
+            }
+            return values;
+        }
 
+        this.graphModel = function graphModel(keys, inputs, scaled_inputs, weights) {
+            const numValues = 50;
             const transposedInputs = this.transposeArray(inputs);
-            const xValues = transposedInputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
-            const transposed_scaled_inputs = this.transposeArray(scaled_inputs);
-            const min_max_tci = transposed_scaled_inputs.map(arr => [Math.min(...arr), Math.max(...arr)]);
-            const yValues = min_max_tci.map((feature, index) => feature.map(value => this.predict_single_feature(value, weights[index], weights.at(-1))));
+            const xValues = transposedInputs.map(arr => this.linSpace(Math.min(...arr), Math.max(...arr), numValues));
+            const scaledXValues = this.scaleFeatures(xValues);
+            var yValues = [];
+
+            for (let i = 0; i < xValues.length; i++) {
+                const scaledXValuesT = this.transposeArray(scaledXValues);
+                const current_feature_inputs = this.linSpace(Math.min(...scaledXValuesT[i]), Math.max(...scaledXValuesT[i]), numValues);
+                var predictions = current_feature_inputs.map((input) => this.predict_single_feature(weights[i], input, weights.at(-1)));
+                yValues.push(predictions);
+            }
+
             xValues.forEach((_, index) => {
+                var data = [];
+                for (let i = 0; i <= numValues; i++) {
+                    const tmpData = { x: xValues[index][i], y: yValues[index][i] }
+                    data.push(tmpData);
+                }
                 const lineData = {
                     label: keys[index],
-                    data: [
-                        { x: xValues[index][0], y: yValues[index][0] },
-                        { x: xValues[index][1], y: yValues[index][1] }
-                    ],
+                    data: data,
                     backgroundColor: this.chart.data.datasets[index].backgroundColor,
                     borderColor: this.chart.data.datasets[index].backgroundColor,
                     showLine: true,
                     pointStyle: false,
                     hidden: index != 0
                 };
-
                 this.chart.data.datasets.push(lineData);
             });
             this.chart.update();
@@ -204,4 +226,5 @@ class MultipleVariable {
     }
 }
 
-export default MultipleVariable;
+
+export default MultipleLogisticRegression;

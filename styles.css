@@ -65,7 +65,7 @@ nav ul li a.active {
 }
 
 #predictions th, #predictions td {
-    padding: 2px;
+    padding: 1px;
     text-align: left;
-    border: 1px solid rgb(243, 243, 243);
+    border: 1px solid rgb(255, 255, 255);
 }

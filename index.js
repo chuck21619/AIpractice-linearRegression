@@ -4,6 +4,7 @@ import Polynomial from './methods/Polynomial.js';
 import PolynomialCubed from './methods/PolynomialCubed.js';
 import LogisticRegression from './methods/LogisticRegression.js';
 import NeuralNetwork from './methods/NeuralNetwork.js';
+import MultipleLogisticRegression from './methods/MultipleLogisticRegression.js';
 
 var method;
 function onNavButtonClick(file) {
@@ -47,8 +48,13 @@ function onNavButtonClick(file) {
         }
         else if (file == 'LogisticRegression.js') {
             document.getElementById('title').innerHTML = "Univariate<br>Logistic Regression";
-            document.getElementById('subtitle').innerHTML = "Mean Normalized.";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial.";
             method = new LogisticRegression(myChart);
+        }
+        else if (file == 'MultipleLogisticRegression.js') {
+            document.getElementById('title').innerHTML = "Multiple Variable<br>Logistic Regression";
+            document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
+            method = new MultipleLogisticRegression(myChart);
         }
         else if (file == 'NeuralNetwork.js') {
             document.getElementById('title').innerHTML = "Neural Network";
@@ -110,7 +116,7 @@ function createChart() {
             plugins: {
                 legend: {
                     onClick: function (event, legendItem) {
-                        if (method instanceof MultipleVariable) {
+                        if (method instanceof MultipleVariable || MultipleLogisticRegression) {
                             const index = legendItem.datasetIndex;
                             const dataset = myChart.data.datasets[index];
                             const label = dataset.label;
@@ -248,7 +254,7 @@ function handleFiles(files) {
                     updateChartMaxHeight();
                     setChartVisible(true);
                     myChart.update();
-                    if (method instanceof MultipleVariable) {
+                    if (method instanceof MultipleVariable || MultipleLogisticRegression) {
                         for (let i = 1; i < myChart.data.datasets.length; i++) {
                             myChart.data.datasets[i].hidden = true;
                         }
@@ -256,7 +262,7 @@ function handleFiles(files) {
                 }, function (equationString, featureImpacts) {
                     const keys = Object.keys(json[0]);
                     var featureImpactsString = ""
-                    if (method instanceof MultipleVariable) {
+                    if (method instanceof MultipleVariable || MultipleLogisticRegression) {
                         featureImpactsString = featureImpacts.reduce((string, impact, index) => {
                             return string + keys[index] + "=" + (impact * 100).toFixed(0) + "% ";
                         }, "feature importance: ");
