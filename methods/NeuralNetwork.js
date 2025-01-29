@@ -61,6 +61,8 @@ class NeuralNetwork {
             console.log("inputs:", inputs);
             console.log("targets:", targets);
             this.forwardPropagation(inputs);
+            const cost = this.compute_cost(targets);
+            console.log("cost:", cost);
             // const equationString = "";
             // const featureImpacts = []
             // finishedCallback(equationString, featureImpacts);
@@ -84,7 +86,7 @@ class NeuralNetwork {
         }
 
         this.log = function log(A) {
-            return A.map(value => Math.log(value));
+            return A.map(arr => arr.map(value => Math.log(value)));
         }
 
         this.dotProduct = function dotProduct(matrixA, matrixB) {
@@ -174,13 +176,14 @@ class NeuralNetwork {
 
         this.compute_cost = function compute_cost(targets) {
             const numberOfLayers = this.configuration[NeuralNetwork.layer_nodes].length;
-            const activations = this.cache[numberOfLayers][NeuralNetwork.activations];
-            const firstPart = this.dotProduct(this.log(activations), this.transposeArray(targets));
-            one_minus_activations = activations.map(value => 1 - value);
-            one_minus_targets = targets.map(value => 1 - value);
-            const secondPart = this.dotProduct(this.log(one_minus_activations), this.transposeArray(one_minus_targets));
+            const activations = this.cache[numberOfLayers-1][NeuralNetwork.activations];
+            const transposedTargets = targets.map(value => [value]);
+            const firstPart = this.dotProduct(this.log(activations), transposedTargets)[0][0];
+            const one_minus_activations = activations.map(arr => arr.map(value => 1 - value));
+            const one_minus_targets = targets.map(value => 1 - value);
+            const tranposed_one_minus_targets = one_minus_targets.map(value => [value]);
+            const secondPart = this.dotProduct(this.log(one_minus_activations), tranposed_one_minus_targets)[0][0];
             const cost = -(firstPart + secondPart) / targets.length
-            //cost = np.squeeze(cost)
             return cost;
         }
 
