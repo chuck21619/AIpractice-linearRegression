@@ -5,12 +5,12 @@ class NeuralNetwork {
     static layer_nodes = "layer_nodes";
     static Z = "Z";
     static weights = "weights";
-    static dw = "dw";
+    static dW = "dw";
     static bias = "bias";
     static db = "db";
     static activations = "activations";
     static dA = "dA";
-
+    static dA_prev = "dA_prev";
 
     constructor(chart) {
 
@@ -65,7 +65,8 @@ class NeuralNetwork {
             this.forwardPropagation(inputs);
             const cost = this.compute_cost(targets);
             console.log("cost:", cost);
-            this.backwardPropagation(targets);
+            this.backwardPropagation(inputs, targets);
+            this.updateParameters();
             // const equationString = "";
             // const featureImpacts = []
             // finishedCallback(equationString, featureImpacts);
@@ -211,7 +212,7 @@ class NeuralNetwork {
             return cost;
         }
 
-        this.backwardPropagation = function backwardPropagation(targets) {
+        this.backwardPropagation = function backwardPropagation(inputs, targets) {
             console.log("back prop ---------------------------");
             const numberOfLayers = this.configuration[NeuralNetwork.layer_nodes].length;
             const activations = this.cache[numberOfLayers - 1][NeuralNetwork.activations][0];
@@ -250,9 +251,10 @@ class NeuralNetwork {
             const dA_prev = this.dotProduct(WT, [dZ]);
             console.log("dA_prev:", dA_prev);
 
-            this.cache[numberOfLayers - 1][NeuralNetwork.dA] = dA_prev;
+            this.cache[numberOfLayers - 1][NeuralNetwork.dA] = dAL;
+            this.cache[numberOfLayers - 2][NeuralNetwork.dA_prev] = dA_prev;
             this.cache[numberOfLayers - 1][NeuralNetwork.dW] = dW;
-            this.cache[numberOfLayers - 1][NeuralNetwork.db] = db;
+            this.cache[numberOfLayers - 1][NeuralNetwork.db] = [[db]];
 
 
             for (let i = numberOfLayers - 2; i >= 0; i--) {
@@ -260,31 +262,52 @@ class NeuralNetwork {
                 const Z = this.cache[i][NeuralNetwork.Z];
                 console.log("Z:", Z);
 
+
                 // # When z <= 0, you should set dz to 0 as well. 
                 // dZ[Z <= 0] = 0
                 const dZ = Z.map(row => row.map(value => value < 0 ? 0 : value));
                 console.log("dZ:", dZ);
 
-                //NEXT task = change cache to account for another layer (layer 0) where the inputs will be set to the activations.
-                //go through and check everywhere numberOfLayers is being used. they will probly need to be updated
-                //THEN i can start uncommenting and getting the below code to work
-
                 // dW = np.dot(dZ, A_prev.T)/m
-                // const A_prev = this.cache[numberOfLayers - 2][NeuralNetwork.activations];
-                // const A_prevT = this.transposeArray(A_prev);
-                // var dW = this.dotProduct([dZ], A_prevT);
-                // dW = this.broadcastDivide(dW, [[numberOfExamples]]);
-                // console.log("dW:", dW);
+                const A_prev = i == 0 ? inputs : this.transposeArray(this.cache[i - 1][NeuralNetwork.activations]);
+                var dW = this.dotProduct(dZ, A_prev);
+                dW = dW.map(row => row.map(value => value/numberOfExamples));
+                console.log("dW:", dW);
 
-                // // db = np.sum(dZ, axis=1, keepdims=True)/m
-                // const db = dZ.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / numberOfExamples;
-                // console.log("db:", db);
+                // db = np.sum(dZ, axis=1, keepdims=True)/m
+                const db = this.transposeArray([this.sumRows(dZ).map(value => value/numberOfExamples)]);
+                console.log("db:", db);
 
-                // // dA_prev = np.dot(W.T, dZ)
-                // const W = this.cache[numberOfLayers - 1][NeuralNetwork.weights];
-                // const WT = this.transposeArray(W);
-                // const dA_prev = this.dotProduct(WT, [dZ]);
-                // console.log("dA_prev:", dA_prev);
+                // dA_prev = np.dot(W.T, dZ)
+                const W = this.cache[i][NeuralNetwork.weights];
+                const WT = this.transposeArray(W);
+                const dA_prev = this.dotProduct(WT, dZ);
+                console.log("dA_prev:", dA_prev);
+
+                if (i > 0) {
+                    this.cache[i-1][NeuralNetwork.dA] = dA_prev;
+                }
+                this.cache[i][NeuralNetwork.dW] = dW;
+                this.cache[i][NeuralNetwork.db] = db;
+            }
+        }
+
+        this.updateParameters = function updateParameters() {
+            
+            console.log("update parameters ---------------------------");
+            for (let i = 0; i < this.cache.length; i++) {
+                console.log("layer:", i);
+                for (let k = 0; k < this.cache[i][NeuralNetwork.weights].length; k ++) {
+                    console.log("    weight:", k);
+                    for (let j = 0; j < this.cache[i][NeuralNetwork.weights][k].length; j++) {
+                        console.log("        index:", j);
+                        this.cache[i][NeuralNetwork.weights][k][j] -= this.configuration[NeuralNetwork.learning_rate] * this.cache[i][NeuralNetwork.dW][k][j];
+                    }
+                }
+                for (let k = 0; k < this.cache[i][NeuralNetwork.bias].length; k++ ) {
+                    console.log("    bias:", k);
+                    this.cache[i][NeuralNetwork.bias][k][0] -= this.configuration[NeuralNetwork.learning_rate] * this.cache[i][NeuralNetwork.db][k][0];
+                }
             }
         }
     }
