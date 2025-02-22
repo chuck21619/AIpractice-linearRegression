@@ -10,15 +10,14 @@ class NeuralNetwork {
     static db = "db";
     static activations = "activations";
     static dA = "dA";
-    static dA_prev = "dA_prev";
 
     constructor(chart) {
 
         this.chart = chart;
         this.configuration = {
-            [NeuralNetwork.iterations]: 10000,
-            [NeuralNetwork.learning_rate]: 0.01,
-            [NeuralNetwork.layer_nodes]: [3, 5, 2, 1]
+            [NeuralNetwork.iterations]: 2500,
+            [NeuralNetwork.learning_rate]: 0.0075,
+            [NeuralNetwork.layer_nodes]: [7, 1]
         };
         this.cache = [];
 
@@ -53,20 +52,39 @@ class NeuralNetwork {
         }
 
         this.trainModelAndGraphData = function (json, initialCallback, finishedCallback) {
-            console.log("cache:", this.cache);
+            this.cache = [];
+            // //console.log("cache:", this.cache);
             const jsonData = this.parseJsonToData(json);
             const keys = jsonData.keys;
             const inputs = jsonData.inputs;
             const targets = jsonData.targets;
             this.initializeParameters(inputs[0].length);
-            console.log("keys:", keys);
-            console.log("inputs:", inputs);
-            console.log("targets:", targets);
-            this.forwardPropagation(inputs);
-            const cost = this.compute_cost(targets);
-            console.log("cost:", cost);
-            this.backwardPropagation(inputs, targets);
-            this.updateParameters();
+            //console.log("after initializing parameters:", JSON.parse(JSON.stringify(this.cache)));
+            //console.log("keys:", JSON.parse(JSON.stringify(keys)));
+            //console.log("inputs:", JSON.parse(JSON.stringify(inputs)));
+            //console.log("targets:", JSON.parse(JSON.stringify(targets)));
+
+            for (let i = 0; i < this.configuration[NeuralNetwork.iterations]; i++) {
+                // //console.log("-------------------");
+                ////console.log("before forward propagation ", i, ":", JSON.parse(JSON.stringify(this.cache)));
+                this.forwardPropagation(inputs);
+                //console.log("before compute cost ", i, ":", JSON.parse(JSON.stringify(this.cache)));
+                const cost = this.compute_cost(targets);
+                //console.log("before backward propagation ", i, ":", JSON.parse(JSON.stringify(this.cache)));
+                this.backwardPropagation(inputs, targets);
+                //console.log("before update parameters propagation ", i, ":", JSON.parse(JSON.stringify(this.cache)));
+                this.updateParameters();                
+                if ( (i == this.configuration[NeuralNetwork.iterations] - 1) || (i % (this.configuration[NeuralNetwork.iterations] / 10) == 0) ) {
+                    console.log("iteration:", i, " cost:", cost);
+                    console.log("cache ", i, ":", JSON.parse(JSON.stringify(this.cache)));
+                }
+            }
+
+            //NEXT TODO: figure out why cost is the same for both data sets (nueralNetwork & logistic multiple)
+            //second iteration has identical activations
+            //it could be related to not making a deep copy of something?
+            //investigate bias term. looks like they might all be the same for a given layer
+
             // const equationString = "";
             // const featureImpacts = []
             // finishedCallback(equationString, featureImpacts);
@@ -187,16 +205,24 @@ class NeuralNetwork {
         }
 
         this.forwardPropagation = function forwardPropagation(features) {
+            //console.log("forwardPropagation---------");
             const numberOfLayers = this.configuration[NeuralNetwork.layer_nodes].length;
             for (let i = 0; i < numberOfLayers; i++) {
+                //console.log("                  ---------layer:", i);
                 const weights = this.cache[i][NeuralNetwork.weights];
+                //console.log("weights:", weights);
                 const bias = this.cache[i][NeuralNetwork.bias];
+                //console.log("bias:", bias);
                 const previousActivations = i == 0 ? this.transposeArray(features) : this.cache[i - 1][NeuralNetwork.activations];
+                //console.log("previousActivations:", previousActivations);
                 const Z = this.addScaler(this.dotProduct(weights, previousActivations), bias);
+                //console.log("Z:", Z);
                 const activations = i + 1 == numberOfLayers ? this.sigmoid(Z) : this.relu(Z);
+                //console.log("activations:", activations);
                 this.cache[i][NeuralNetwork.Z] = Z;
                 this.cache[i][NeuralNetwork.activations] = activations;
             }
+            //console.log("end forwardPropagation-----");
         }
 
         this.compute_cost = function compute_cost(targets) {
@@ -213,7 +239,6 @@ class NeuralNetwork {
         }
 
         this.backwardPropagation = function backwardPropagation(inputs, targets) {
-            console.log("back prop ---------------------------");
             const numberOfLayers = this.configuration[NeuralNetwork.layer_nodes].length;
             const activations = this.cache[numberOfLayers - 1][NeuralNetwork.activations][0];
             const numberOfExamples = activations.length;
@@ -222,67 +247,71 @@ class NeuralNetwork {
             const dALfirstPart = this.divideArraysElementWise(targets, activations).map(value => -value);
             const dALsecondPart = this.divideArraysElementWise(one_minus_targets, one_minus_activations);
             const dAL = this.addArraysElementWise(dALfirstPart, dALsecondPart);
-            console.log("dAL:", dAL);
-
 
             // s = 1/(1+np.exp(-Z))
             // dZ = dA * s * (1-s)
             const Z = this.cache[numberOfLayers - 1][NeuralNetwork.Z];
+            // //console.log("Z:", JSON.parse(JSON.stringify(Z)));
             const ones = new Array(Z[0].length).fill(1);
+            // //console.log("ones:", JSON.parse(JSON.stringify(ones)));
             const onePlusExpNegZ = Z[0].map(value => 1 + Math.exp(-value));
+            // //console.log("onePlusExpNegZ:", JSON.parse(JSON.stringify(onePlusExpNegZ)));
             const s = this.divideArraysElementWise(ones, onePlusExpNegZ);
+            // //console.log("s:", JSON.parse(JSON.stringify(s)));
             const dZ = this.multiplyArraysElementWise(this.multiplyArraysElementWise(dAL, s), s.map(value => 1 - value));
-            console.log("dZ:", dZ);
+            // //console.log("dZ:", JSON.parse(JSON.stringify(dZ)));
 
             // dW = np.dot(dZ, A_prev.T)/m
             const A_prev = this.cache[numberOfLayers - 2][NeuralNetwork.activations];
+            // //console.log("A_prev:", JSON.parse(JSON.stringify(A_prev)));
             const A_prevT = this.transposeArray(A_prev);
+            // //console.log("A_prevT:", JSON.parse(JSON.stringify(A_prevT)));
             var dW = this.dotProduct([dZ], A_prevT);
+            // //console.log("dW1:", JSON.parse(JSON.stringify(dW)));
             dW = this.broadcastDivide(dW, [[numberOfExamples]]);
-            console.log("dW:", dW);
+            // //console.log("dW2:", JSON.parse(JSON.stringify(dW)));
 
             // db = np.sum(dZ, axis=1, keepdims=True)/m
             const db = dZ.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / numberOfExamples;
-            console.log("db:", db);
 
             // dA_prev = np.dot(W.T, dZ)
             const W = this.cache[numberOfLayers - 1][NeuralNetwork.weights];
             const WT = this.transposeArray(W);
             const dA_prev = this.dotProduct(WT, [dZ]);
-            console.log("dA_prev:", dA_prev);
 
-            this.cache[numberOfLayers - 1][NeuralNetwork.dA] = dAL;
-            this.cache[numberOfLayers - 2][NeuralNetwork.dA_prev] = dA_prev;
+            this.cache[numberOfLayers - 1][NeuralNetwork.dA] = [dAL]; //       <------ i just put dAL inside of brackets.
+            this.cache[numberOfLayers - 2][NeuralNetwork.dA] = dA_prev;
             this.cache[numberOfLayers - 1][NeuralNetwork.dW] = dW;
             this.cache[numberOfLayers - 1][NeuralNetwork.db] = [[db]];
+            //console.log("dAL:", JSON.parse(JSON.stringify(this.cache[numberOfLayers - 1][NeuralNetwork.dA])));
 
-
+            //console.log("cache after Lth layer backprop:", JSON.parse(JSON.stringify(this.cache)));
             for (let i = numberOfLayers - 2; i >= 0; i--) {
-                console.log("backprop layer ::: ", i);
+                //console.log("    --------------LAYER ", i, ":");
+                //console.log("dA:", JSON.parse(JSON.stringify(this.cache[i][NeuralNetwork.dA])));
                 const Z = this.cache[i][NeuralNetwork.Z];
-                console.log("Z:", Z);
-
+                //console.log("Z:", JSON.parse(JSON.stringify(Z)));
 
                 // # When z <= 0, you should set dz to 0 as well. 
                 // dZ[Z <= 0] = 0
-                const dZ = Z.map(row => row.map(value => value < 0 ? 0 : value));
-                console.log("dZ:", dZ);
+                const dZ = this.cache[i][NeuralNetwork.dA].map((row, rowIndex) => row.map((value, valueIndex) => Z[rowIndex][valueIndex] < 0 ? 0 : value));
+                //console.log("dZ:", JSON.parse(JSON.stringify(dZ)));
 
                 // dW = np.dot(dZ, A_prev.T)/m
-                const A_prev = i == 0 ? inputs : this.transposeArray(this.cache[i - 1][NeuralNetwork.activations]);
-                var dW = this.dotProduct(dZ, A_prev);
+                const A_prevT = i == 0 ? inputs : this.transposeArray(this.cache[i - 1][NeuralNetwork.activations]);
+                //console.log("A_prevT:", JSON.parse(JSON.stringify(A_prev)));
+                var dW = this.dotProduct(dZ, A_prevT);
+                //console.log("dW1:", JSON.parse(JSON.stringify(dW)));
                 dW = dW.map(row => row.map(value => value/numberOfExamples));
-                console.log("dW:", dW);
+                //console.log("dW2:", JSON.parse(JSON.stringify(dW)));
 
                 // db = np.sum(dZ, axis=1, keepdims=True)/m
                 const db = this.transposeArray([this.sumRows(dZ).map(value => value/numberOfExamples)]);
-                console.log("db:", db);
 
                 // dA_prev = np.dot(W.T, dZ)
                 const W = this.cache[i][NeuralNetwork.weights];
                 const WT = this.transposeArray(W);
                 const dA_prev = this.dotProduct(WT, dZ);
-                console.log("dA_prev:", dA_prev);
 
                 if (i > 0) {
                     this.cache[i-1][NeuralNetwork.dA] = dA_prev;
@@ -294,21 +323,22 @@ class NeuralNetwork {
 
         this.updateParameters = function updateParameters() {
             
-            console.log("update parameters ---------------------------");
+            // //console.log("------update parameters start-----", JSON.parse(JSON.stringify(this.cache)));
             for (let i = 0; i < this.cache.length; i++) {
-                console.log("layer:", i);
                 for (let k = 0; k < this.cache[i][NeuralNetwork.weights].length; k ++) {
-                    console.log("    weight:", k);
                     for (let j = 0; j < this.cache[i][NeuralNetwork.weights][k].length; j++) {
-                        console.log("        index:", j);
+                        // this.cache[i][NeuralNetwork.weights][k][j] = this.cache[i][NeuralNetwork.weights][k][j] - (this.cache[i][NeuralNetwork.dW][k][j] * this.configuration[NeuralNetwork.learning_rate]);
+                        // i dont know why the below line doesnt work. instead i have to use the line above
+                        // hmmm. maybe the below line does work and i debugged incorrectly
                         this.cache[i][NeuralNetwork.weights][k][j] -= this.configuration[NeuralNetwork.learning_rate] * this.cache[i][NeuralNetwork.dW][k][j];
                     }
                 }
                 for (let k = 0; k < this.cache[i][NeuralNetwork.bias].length; k++ ) {
-                    console.log("    bias:", k);
                     this.cache[i][NeuralNetwork.bias][k][0] -= this.configuration[NeuralNetwork.learning_rate] * this.cache[i][NeuralNetwork.db][k][0];
                 }
             }
+            
+            // //console.log("------update parameters end-------", JSON.parse(JSON.stringify(this.cache)));
         }
     }
 }
