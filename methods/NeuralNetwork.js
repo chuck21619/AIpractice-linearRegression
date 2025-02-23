@@ -17,7 +17,7 @@ class NeuralNetwork {
         this.configuration = {
             [NeuralNetwork.iterations]: 2500,
             [NeuralNetwork.learning_rate]: 0.0075,
-            [NeuralNetwork.layer_nodes]: [7, 1]
+            [NeuralNetwork.layer_nodes]: [5, 1]
         };
         this.cache = [];
 
