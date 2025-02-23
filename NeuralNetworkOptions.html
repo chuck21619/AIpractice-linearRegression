@@ -2,27 +2,44 @@
 <html>
 <head>
     <title>Neural Network Options</title>
+    <style>
+        button {
+            width: 55px;
+        }
+    </style>
 </head>
 <body>
-    <button id="addLayerBtn">+</button>
     <table id="nnTable">
     </table>
     <script>
         const table = document.getElementById('nnTable');
-        const addLayerBtn = document.getElementById('addLayerBtn');
         let numLayers = 1;
         let neuronCounts = [1]; // Initialize with a default value for the first layer
 
         function createTable() {
             table.innerHTML = ''; // Clear the table
-            let headerRow = table.insertRow();
+            let buttonRow = table.insertRow();
+            let labelRow = table.insertRow();
             let dropdownRow = table.insertRow();
-            let removeButtonRow = table.insertRow();
 
             for (let i = 0; i < numLayers; i++) {
-                // Header Row (Layer Number)
-                let headerCell = headerRow.insertCell();
-                headerCell.textContent = `Layer ${i + 1}`;
+                let buttonCell = buttonRow.insertCell();   
+                let removeButton = document.createElement('button');
+                removeButton.textContent = '-';
+                removeButton.addEventListener('click', () => removeLayer(i));
+                buttonCell.appendChild(removeButton);
+
+                let labelCell = labelRow.insertCell();
+                let layerLabel = document.createElement('span');
+                layerLabel.textContent = `Layer ${i + 1}`;
+                labelCell.appendChild(layerLabel);
+
+                // Hide remove button if only one layer
+                if (numLayers === 1) {
+                    removeButton.style.display = 'none';
+                } else {
+                    removeButton.style.display = '';
+                }
 
                 // Dropdown Row (Neuron Selection)
                 let dropdownCell = dropdownRow.insertCell();
@@ -36,21 +53,18 @@
                 }
                 dropdown.value = neuronCounts[i]; // Set the selected value
                 dropdownCell.appendChild(dropdown);
-
-                // Remove Button Row
-                let removeButtonCell = removeButtonRow.insertCell();
-                let removeButton = document.createElement('button');
-                removeButton.textContent = '-';
-                removeButton.addEventListener('click', () => removeLayer(i));
-                removeButtonCell.appendChild(removeButton);
-
-                // Hide remove button if only one layer
-                if (numLayers === 1) {
-                    removeButton.style.display = 'none';
-                } else {
-                    removeButton.style.display = '';
-                }
             }
+
+            // Add the "+" button column
+            let buttonCell = buttonRow.insertCell(); 
+            let labelCell = labelRow.insertCell();
+            let dropdownCell = dropdownRow.insertCell();
+
+            let addLayerBtn = document.createElement('button');
+            addLayerBtn.textContent = '+';
+            addLayerBtn.addEventListener('click', addLayer);
+
+            buttonCell.appendChild(addLayerBtn);
         }
 
         function addLayer() {
@@ -88,7 +102,6 @@
             }
         }
 
-        addLayerBtn.addEventListener('click', addLayer);
         createTable(); // Initial table creation
     </script>
 </body>
