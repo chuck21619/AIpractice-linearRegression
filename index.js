@@ -317,3 +317,103 @@ function setChartVisible(showChart) {
     }
     updateChartMaxHeight();
 }
+
+
+const table = document.getElementById('nnTable');
+let numLayers = 1;
+let neuronCounts = [1]; // Initialize with a default value for the first layer
+createTable(); // Initial table creation
+
+function createTable() {
+    table.innerHTML = ''; // Clear the table
+    let buttonRow = table.insertRow();
+    let labelRow = table.insertRow();
+    let dropdownRow = table.insertRow();
+
+    // Add labels to the beginning of each row
+    let buttonLabelCell = buttonRow.insertCell(0);
+    buttonLabelCell.innerHTML = "<b>Add/Remove</b>";
+    let labelLabelCell = labelRow.insertCell(0);
+    labelLabelCell.innerHTML = "<b>Layer</b>";
+    let dropdownLabelCell = dropdownRow.insertCell(0);
+    dropdownLabelCell.innerHTML = "<b># of Neurons</b>";
+
+    for (let i = 0; i < numLayers; i++) {
+        let buttonCell = buttonRow.insertCell();
+        let removeButton = document.createElement('button');
+        removeButton.textContent = '-';
+        removeButton.addEventListener('click', () => removeLayer(i));
+        buttonCell.appendChild(removeButton);
+
+        let labelCell = labelRow.insertCell();
+        let layerLabel = document.createElement('span');
+        layerLabel.textContent = `${i + 1}`;
+        labelCell.appendChild(layerLabel);
+
+        // Hide remove button if only one layer
+        if (numLayers === 1) {
+            removeButton.style.display = 'none';
+        } else {
+            removeButton.style.display = '';
+        }
+
+        // Dropdown Row (Neuron Selection)
+        let dropdownCell = dropdownRow.insertCell();
+        let dropdown = document.createElement('select');
+        dropdown.id = `layer${i + 1}`; // Add an ID to the dropdown
+        for (let j = 1; j <= 1000; j++) {
+            let option = document.createElement('option');
+            option.value = j;
+            option.text = j;
+            dropdown.add(option);
+        }
+        dropdown.value = neuronCounts[i]; // Set the selected value
+        dropdownCell.appendChild(dropdown);
+    }
+
+    // Add the "+" button column
+    let buttonCell = buttonRow.insertCell();
+    let labelCell = labelRow.insertCell();
+    let dropdownCell = dropdownRow.insertCell();
+
+    let addLayerBtn = document.createElement('button');
+    addLayerBtn.textContent = '+';
+    addLayerBtn.addEventListener('click', addLayer);
+
+    buttonCell.appendChild(addLayerBtn);
+}
+
+function addLayer() {
+    // Store current neuron counts
+    storeNeuronCounts();
+    numLayers++;
+    neuronCounts.push(1); // Default value for the new layer
+    createTable();
+    restoreNeuronCounts();
+}
+
+function removeLayer(index) {
+    if (numLayers > 1) {
+        // Store current neuron counts
+        storeNeuronCounts();
+        numLayers--;
+        neuronCounts.splice(index, 1); // Remove the neuron count for the removed layer
+        createTable();
+        restoreNeuronCounts();
+    }
+}
+
+function storeNeuronCounts() {
+    neuronCounts = [];
+    for (let i = 1; i <= numLayers; i++) {
+        let dropdown = document.getElementById(`layer${i}`);
+        neuronCounts.push(parseInt(dropdown.value));
+    }
+}
+
+function restoreNeuronCounts() {
+    for (let i = 1; i <= numLayers; i++) {
+        let dropdown = document.getElementById(`layer${i}`);
+        dropdown.value = neuronCounts[i - 1];
+    }
+}

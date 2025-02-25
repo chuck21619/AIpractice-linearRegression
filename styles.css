@@ -41,6 +41,9 @@ nav ul li a:hover {
 nav ul li a.active {
     background-color: rgb(40, 114, 123);
 }
+button {
+    width: 50px;
+}
 #content {
     flex-grow: 1;
     flex-shrink: 1;
