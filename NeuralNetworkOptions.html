@@ -4,7 +4,7 @@
     <title>Neural Network Options</title>
     <style>
         button {
-            width: 55px;
+            width: 50px;
         }
     </style>
 </head>
@@ -22,6 +22,14 @@
             let labelRow = table.insertRow();
             let dropdownRow = table.insertRow();
 
+            // Add labels to the beginning of each row
+            let buttonLabelCell = buttonRow.insertCell(0);
+            buttonLabelCell.innerHTML = "<b>Add/Remove</b>";
+            let labelLabelCell = labelRow.insertCell(0);
+            labelLabelCell.innerHTML = "<b>Layer</b>";
+            let dropdownLabelCell = dropdownRow.insertCell(0);
+            dropdownLabelCell.innerHTML = "<b># of Neurons</b>";
+
             for (let i = 0; i < numLayers; i++) {
                 let buttonCell = buttonRow.insertCell();   
                 let removeButton = document.createElement('button');
@@ -31,7 +39,7 @@
 
                 let labelCell = labelRow.insertCell();
                 let layerLabel = document.createElement('span');
-                layerLabel.textContent = `Layer ${i + 1}`;
+                layerLabel.textContent = `${i + 1}`;
                 labelCell.appendChild(layerLabel);
 
                 // Hide remove button if only one layer
