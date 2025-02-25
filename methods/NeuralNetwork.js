@@ -15,7 +15,7 @@ class NeuralNetwork {
 
         this.chart = chart;
         this.configuration = {
-            [NeuralNetwork.iterations]: 2500,
+            [NeuralNetwork.iterations]: 100,
             [NeuralNetwork.learning_rate]: 0.0075,
             [NeuralNetwork.layer_nodes]: [5, 1]
         };
@@ -52,6 +52,7 @@ class NeuralNetwork {
         }
 
         this.trainModelAndGraphData = function (json, initialCallback, finishedCallback) {
+            console.log("config:", this.configuration);
             this.cache = [];
             // //console.log("cache:", this.cache);
             const jsonData = this.parseJsonToData(json);

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
     <title>Linear Regression</title>
     <link rel="icon" href="bird-icon.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 
 <body>
     <nav>
@@ -17,8 +19,9 @@
             <li><a href="#" data-jsFile="PolynomialCubed.js">Cubed Univariate<br>Linear Regression</a></li>
             <li><a href="#" data-jsFile="MultipleVariable.js">Multiple Variable<br>Linear Regression</a></li>
             <li><a href="#" data-jsFile="LogisticRegression.js">Univariate<br>Logistic Regression</a></li>
-            <li><a href="#" data-jsFile="MultipleLogisticRegression.js">Multiple Variable<br>Logistic Regression</a></li>
-            <li><a href="#" data-jsFile="NeuralNetwork.js">Neural Network</a></li>
+            <li><a href="#" data-jsFile="MultipleLogisticRegression.js">Multiple Variable<br>Logistic Regression</a>
+            </li>
+            <li><a href="#" data-jsFile="NeuralNetwork.js">Binary Classification<br>Neural Network</a></li>
         </ul>
     </nav>
     <div id="content">
@@ -31,7 +34,18 @@
         </div>
         <canvas hidden id="myChart"></canvas>
         <p id="subtitle">Select a method on the left to get started</p>
-        <table id="nnTable"></table>
+        <div id="nnOptions" style="display: none;">
+            <label for="iterationDropdown">Iterations</label>
+            <select id="iterationDropdown">
+                <option value="100">100</option>
+                <option value="1000">1000</option>
+                <option value="10000">10000</option>
+                <option value="100000">100000</option>
+            </select>
+            <br />
+            <br />
+            <table id="nnTable"></table>
+        </div>
         <p id="equation">Excel format:</p>
         <div id="images">
             <img src="images/univariate_example.png" alt="">
@@ -45,5 +59,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="index.js" type="module"></script>
 </body>
+
 
 </html>

@@ -14,7 +14,7 @@
     <script>
         const table = document.getElementById('nnTable');
         let numLayers = 1;
-        let neuronCounts = [1]; // Initialize with a default value for the first layer
+        let neuronCounts = [5]; // Initialize with a default value for the first layer
 
         function createTable() {
             table.innerHTML = ''; // Clear the table
@@ -60,6 +60,7 @@
                     dropdown.add(option);
                 }
                 dropdown.value = neuronCounts[i]; // Set the selected value
+                dropdown.addEventListener('change', storeNeuronCounts); // Add event listener
                 dropdownCell.appendChild(dropdown);
             }
 

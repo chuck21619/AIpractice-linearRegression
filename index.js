@@ -57,11 +57,12 @@ function onNavButtonClick(file) {
             method = new MultipleLogisticRegression(myChart);
         }
         else if (file == 'NeuralNetwork.js') {
-            document.getElementById('title').innerHTML = "Neural Network";
-            document.getElementById('subtitle').innerHTML = "TODO: list number of layers, neurons. ReLu activation functions.";
+            document.getElementById('title').innerHTML = "Binary Classication<br>Neural Network";
+            document.getElementById('subtitle').innerHTML = "ReLu hidden activations. Sigmoid output activation. 0.0075 learning rate.";
             method = new NeuralNetwork(myChart);
         }
     }
+    document.getElementById('nnOptions').style.display = file == 'NeuralNetwork.js' ? 'block' : 'none';
 }
 
 window.addEventListener('resize', function () {
@@ -250,6 +251,11 @@ function handleFiles(files) {
                 const trainingData = json.slice(0, emptyRowIndex);
                 const dataToPredict = json.slice(emptyRowIndex + 1);
 
+                if ( method instanceof NeuralNetwork ) {
+                    method.configuration[NeuralNetwork.layer_nodes] = [...neuronCounts, 1];
+                    method.configuration[NeuralNetwork.iterations] = document.getElementById('iterationDropdown').value;
+                }
+
                 method.trainModelAndGraphData(trainingData, () => {
                     updateChartMaxHeight();
                     setChartVisible(true);
@@ -321,9 +327,8 @@ function setChartVisible(showChart) {
 
 const table = document.getElementById('nnTable');
 let numLayers = 1;
-let neuronCounts = [1]; // Initialize with a default value for the first layer
+let neuronCounts = [5]; // Initialize with a default value for the first layer
 createTable(); // Initial table creation
-
 function createTable() {
     table.innerHTML = ''; // Clear the table
     let buttonRow = table.insertRow();
@@ -332,11 +337,11 @@ function createTable() {
 
     // Add labels to the beginning of each row
     let buttonLabelCell = buttonRow.insertCell(0);
-    buttonLabelCell.innerHTML = "<b>Add/Remove</b>";
+    buttonLabelCell.innerHTML = "Add/Remove";
     let labelLabelCell = labelRow.insertCell(0);
-    labelLabelCell.innerHTML = "<b>Layer</b>";
+    labelLabelCell.innerHTML = "Hidden Layer";
     let dropdownLabelCell = dropdownRow.insertCell(0);
-    dropdownLabelCell.innerHTML = "<b># of Neurons</b>";
+    dropdownLabelCell.innerHTML = "# of Neurons";
 
     for (let i = 0; i < numLayers; i++) {
         let buttonCell = buttonRow.insertCell();
@@ -368,6 +373,7 @@ function createTable() {
             dropdown.add(option);
         }
         dropdown.value = neuronCounts[i]; // Set the selected value
+        dropdown.addEventListener('change', storeNeuronCounts); // Add event listener
         dropdownCell.appendChild(dropdown);
     }
 
