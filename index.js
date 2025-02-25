@@ -3,7 +3,7 @@ import MultipleVariable from './methods/MultipleVariable.js';
 import Polynomial from './methods/Polynomial.js';
 import PolynomialCubed from './methods/PolynomialCubed.js';
 import LogisticRegression from './methods/LogisticRegression.js';
-import NeuralNetwork from './methods/NeuralNetwork.js';
+import NeuralNetworkBinaryClassification from './methods/NeuralNetworkBinaryClassification.js';
 import MultipleLogisticRegression from './methods/MultipleLogisticRegression.js';
 
 var method;
@@ -56,13 +56,13 @@ function onNavButtonClick(file) {
             document.getElementById('subtitle').innerHTML = "Mean Normalized. Non-polynomial with no feature interaction";
             method = new MultipleLogisticRegression(myChart);
         }
-        else if (file == 'NeuralNetwork.js') {
+        else if (file == 'NeuralNetworkBinaryClassification.js') {
             document.getElementById('title').innerHTML = "Binary Classication<br>Neural Network";
             document.getElementById('subtitle').innerHTML = "ReLu hidden activations. Sigmoid output activation. 0.0075 learning rate.";
-            method = new NeuralNetwork(myChart);
+            method = new NeuralNetworkBinaryClassification(myChart);
         }
     }
-    document.getElementById('nnOptions').style.display = file == 'NeuralNetwork.js' ? 'block' : 'none';
+    document.getElementById('nnOptions').style.display = file == 'NeuralNetworkBinaryClassification.js' ? 'block' : 'none';
 }
 
 window.addEventListener('resize', function () {
@@ -117,7 +117,7 @@ function createChart() {
             plugins: {
                 legend: {
                     onClick: function (event, legendItem) {
-                        if (method instanceof MultipleVariable || MultipleLogisticRegression) {
+                        if (method instanceof MultipleVariable || method instanceof MultipleLogisticRegression) {
                             const index = legendItem.datasetIndex;
                             const dataset = myChart.data.datasets[index];
                             const label = dataset.label;
@@ -251,9 +251,9 @@ function handleFiles(files) {
                 const trainingData = json.slice(0, emptyRowIndex);
                 const dataToPredict = json.slice(emptyRowIndex + 1);
 
-                if ( method instanceof NeuralNetwork ) {
-                    method.configuration[NeuralNetwork.layer_nodes] = [...neuronCounts, 1];
-                    method.configuration[NeuralNetwork.iterations] = document.getElementById('iterationDropdown').value;
+                if (method instanceof NeuralNetworkBinaryClassification) {
+                    method.configuration[NeuralNetworkBinaryClassification.layer_nodes] = [...neuronCounts, 1];
+                    method.configuration[NeuralNetworkBinaryClassification.iterations] = document.getElementById('iterationDropdown').value;
                 }
 
                 method.trainModelAndGraphData(trainingData, () => {
@@ -268,11 +268,14 @@ function handleFiles(files) {
                 }, function (equationString, featureImpacts) {
                     const keys = Object.keys(json[0]);
                     var featureImpactsString = ""
-                    if (method instanceof MultipleVariable || MultipleLogisticRegression) {
-                        featureImpactsString = featureImpacts.reduce((string, impact, index) => {
-                            return string + keys[index] + "=" + (impact * 100).toFixed(0) + "% ";
-                        }, "feature importance: ");
+                    if (featureImpacts.length > 0) {
+                        if (method instanceof MultipleVariable || MultipleLogisticRegression) {
+                            featureImpactsString = featureImpacts.reduce((string, impact, index) => {
+                                return string + keys[index] + "=" + (impact * 100).toFixed(0) + "% ";
+                            }, "feature importance: ");
+                        }
                     }
+                    document.getElementById('equation').style.display = equationString.length > 0 ? 'block' : 'none';
                     document.getElementById('equation').innerHTML = "Prediction = " + equationString + "<br><br>" + featureImpactsString;
                     updateChartMaxHeight();
 
